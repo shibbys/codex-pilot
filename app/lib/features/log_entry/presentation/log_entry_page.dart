@@ -87,25 +87,24 @@ class _LogEntryPageState extends ConsumerState<LogEntryPage> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  final router = GoRouter.of(context);
                   final raw = _weightCtrl.text.trim().replaceAll(',', '.');
                   final weight = double.tryParse(raw);
                   if (weight == null) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Enter a valid weight (e.g., 72.5)')),
-                      );
-                    }
+                    messenger.showSnackBar(
+                      const SnackBar(content: Text('Enter a valid weight (e.g., 72.5)')),
+                    );
                     return;
                   }
 
                   final db = ref.read(appDatabaseProvider);
                   await db.addWeightEntry(date: _date, weightKg: weight, note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim());
 
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  messenger.showSnackBar(
                     const SnackBar(content: Text('Weight saved')),
                   );
-                  context.go(DashboardPage.routePath);
+                  router.go(DashboardPage.routePath);
                 },
                 icon: const Icon(Icons.save),
                 label: const Text('Save'),

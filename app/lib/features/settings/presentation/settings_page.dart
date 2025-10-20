@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_controller.dart';
+import '../../../core/i18n/translations.dart';
 import '../../log_entry/services/reminder_service.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
@@ -34,6 +35,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final themeSettingsAsync = ref.watch(themeControllerProvider);
+    final localeAsync = ref.watch(i18nControllerProvider);
 
     // Current page is Settings, keep index fixed to 2.
     const int currentIndex = 2;
@@ -179,3 +181,25 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 }
+              const SizedBox(height: 24),
+              Text('Language', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.language),
+                  const SizedBox(width: 12),
+                  DropdownButton<Locale>(
+                    value: localeAsync.valueOrNull ?? const Locale('en'),
+                    items: const [
+                      DropdownMenuItem(value: Locale('en'), child: Text('English')),
+                      DropdownMenuItem(value: Locale('pt'), child: Text('Português')),
+                    ],
+                    onChanged: (loc) {
+                      if (loc != null) {
+                        ref.read(i18nControllerProvider.notifier).setLocale(loc);
+                      }
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),

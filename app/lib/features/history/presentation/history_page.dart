@@ -5,7 +5,7 @@ import '../../dashboard/presentation/dashboard_page.dart';
 import '../../settings/presentation/settings_page.dart';
 import '../../../data/local/app_database.dart';
 
-final allEntriesProvider = StreamProvider<List<WeightEntriesData>>((ref) {
+final allEntriesProvider = StreamProvider<List<Object?>>((ref) {
   final db = ref.watch(appDatabaseProvider);
   return db.watchAllEntries();
 });
@@ -29,13 +29,13 @@ class HistoryPage extends ConsumerWidget {
               itemCount: items.length,
               separatorBuilder: (_, __) => const Divider(height: 1),
               itemBuilder: (context, index) {
-                final e = items[index];
-                final d = e.entryDate;
+                final e = items[index] as dynamic;
+                final d = e.entryDate as DateTime;
                 final dateStr = '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
                 return ListTile(
                   leading: const Icon(Icons.monitor_weight),
-                  title: Text('${e.weightKg.toStringAsFixed(1)} kg'),
-                  subtitle: Text(dateStr + (e.note == null ? '' : '  •  ${e.note}')),
+                  title: Text('${(e.weightKg as double).toStringAsFixed(1)} kg'),
+                  subtitle: Text(dateStr + (e.note == null ? '' : '  •  ${e.note as String}')),
                 );
               },
             ),

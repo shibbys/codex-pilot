@@ -6,6 +6,7 @@ import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
 import 'features/log_entry/services/reminder_service.dart';
+import 'core/i18n/translations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,6 +39,7 @@ class _AppRootState extends ConsumerState<AppRoot> {
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     final theme = ref.watch(themeControllerProvider);
+    final localeAsync = ref.watch(i18nControllerProvider);
 
     return theme.when(
       loading: () => const MaterialApp(
@@ -47,10 +49,12 @@ class _AppRootState extends ConsumerState<AppRoot> {
         home: Scaffold(body: Center(child: Text('Theme load error: $e'))),
       ),
       data: (settings) => MaterialApp.router(
-        title: 'Daily Weight Tracker',
+        title: 'Pesândinho',
         theme: buildLightTheme(settings.seedColor),
         darkTheme: buildDarkTheme(settings.seedColor),
         themeMode: settings.mode,
+        locale: localeAsync.valueOrNull,
+        supportedLocales: const [Locale('en'), Locale('pt')],
         routerConfig: router,
       ),
     );

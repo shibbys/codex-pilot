@@ -37,7 +37,7 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
-  Stream<WeightEntriesData?> watchLatestEntry() {
+  Stream<dynamic> watchLatestEntry() {
     final query = (select(weightEntries)
           ..orderBy([(t) => OrderingTerm.desc(t.entryDate)])
           ..limit(1))
@@ -45,7 +45,7 @@ class AppDatabase extends _$AppDatabase {
     return query;
   }
 
-  Stream<List<WeightEntriesData>> watchAllEntries() {
+  Stream<List<dynamic>> watchAllEntries() {
     return (select(weightEntries)
           ..orderBy([(t) => OrderingTerm.desc(t.entryDate)]))
         .watch();

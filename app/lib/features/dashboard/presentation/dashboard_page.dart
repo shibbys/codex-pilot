@@ -6,7 +6,7 @@ import '../../settings/presentation/settings_page.dart';
 import '../../log_entry/presentation/log_entry_page.dart';
 import '../../../data/local/app_database.dart';
 
-final latestEntryProvider = StreamProvider<WeightEntriesData?>((ref) {
+final latestEntryProvider = StreamProvider<Object?>((ref) {
   final db = ref.watch(appDatabaseProvider);
   return db.watchLatestEntry();
 });
@@ -20,13 +20,19 @@ class DashboardPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final latest = ref.watch(latestEntryProvider).value;
-    final latestText = latest != null ? '${latest.weightKg.toStringAsFixed(1)} kg' : '-- kg';
+    String latestText = '-- kg';
+    if (latest != null) {
+      try {
+        final w = (latest as dynamic).weightKg as double;
+        latestText = '${w.toStringAsFixed(1)} kg';
+      } catch (_) {}
+    }
     // Current page is Dashboard, keep index fixed to 0.
     const int currentIndex = 0;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Daily Weight Tracker'),
+        title: const Text('Pesândinho'),
         actions: [
           IconButton(
             tooltip: 'Settings',
