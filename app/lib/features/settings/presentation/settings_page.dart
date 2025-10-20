@@ -23,7 +23,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   void initState() {
     super.initState();
-    // Load saved time and update local state.
     Future.microtask(() async {
       final saved = await ref.read(reminderServiceProvider).loadSavedReminderTime();
       if (saved != null && mounted) {
@@ -37,7 +36,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final themeSettingsAsync = ref.watch(themeControllerProvider);
     final localeAsync = ref.watch(i18nControllerProvider);
 
-    // Current page is Settings, keep index fixed to 2.
     const int currentIndex = 2;
 
     return Scaffold(
@@ -57,9 +55,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ],
                 selected: <ThemeMode>{themeSettings.mode},
                 onSelectionChanged: (selection) {
-                  if (selection.isEmpty) {
-                    return;
-                  }
+                  if (selection.isEmpty) return;
                   ref.read(themeControllerProvider.notifier).updateThemeMode(selection.first);
                 },
               ),
@@ -82,63 +78,84 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     )
                     .toList(),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
+              Text('Language', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.language),
+                  const SizedBox(width: 12),
+                  DropdownButton<Locale>(
+                    value: localeAsync.valueOrNull ?? const Locale('en'),
+                    items: const [
+                      DropdownMenuItem(value: Locale('en'), child: Text('English')),
+                      DropdownMenuItem(value: Locale('pt'), child: Text('Português')),
+                    ],
+                    onChanged: (loc) {
+                      if (loc != null) {
+                        ref.read(i18nControllerProvider.notifier).setLocale(loc);
+                      }
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
               Text('Reminders', style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 8),
               Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ListTile(
-                      leading: const Icon(Icons.schedule),
-                      title: const Text('Daily reminder time'),
-                      subtitle: Text(_time.format(context)),
-                      onTap: () async {
-                        final picked = await showTimePicker(
-                          context: context,
-                          initialTime: _time,
-                        );
-                        if (picked != null) {
-                          setState(() => _time = picked);
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        ElevatedButton.icon(
-                          onPressed: () async {
-                            final t = _time;
-                            await ref.read(reminderServiceProvider).scheduleDailyReminder(
-                                  id: 100,
-                                  hour: t.hour,
-                                  minute: t.minute,
-                                );
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Scheduled daily reminder at ${t.format(context)}')),
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.schedule),
+                    title: const Text('Daily reminder time'),
+                    subtitle: Text(_time.format(context)),
+                    onTap: () async {
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: _time,
+                      );
+                      if (picked != null) {
+                        setState(() => _time = picked);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          final t = _time;
+                          await ref.read(reminderServiceProvider).scheduleDailyReminder(
+                                id: 100,
+                                hour: t.hour,
+                                minute: t.minute,
                               );
-                            }
-                          },
-                          icon: const Icon(Icons.alarm_add),
-                          label: const Text('Schedule'),
-                        ),
-                        const SizedBox(width: 12),
-                        OutlinedButton.icon(
-                          onPressed: () async {
-                            await ref.read(reminderServiceProvider).cancelReminder(100);
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Reminder canceled')),
-                              );
-                            }
-                          },
-                          icon: const Icon(Icons.alarm_off),
-                          label: const Text('Cancel'),
-                        ),
-                      ],
-                    )
-                  ],
-                ),
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Scheduled daily reminder at ${t.format(context)}')),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.alarm_add),
+                        label: const Text('Schedule'),
+                      ),
+                      const SizedBox(width: 12),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          await ref.read(reminderServiceProvider).cancelReminder(100);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Reminder canceled')),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.alarm_off),
+                        label: const Text('Cancel'),
+                      ),
+                    ],
+                  )
+                ],
+              ),
               const Divider(),
               Text('Data Management', style: Theme.of(context).textTheme.titleLarge),
               const ListTile(
