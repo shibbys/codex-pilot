@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 class ReminderService {
   ReminderService(this._plugin);
@@ -12,6 +15,19 @@ class ReminderService {
     const InitializationSettings settings = InitializationSettings(android: androidSettings);
 
     await _plugin.initialize(settings);
+
+    // Android 13+ runtime notification permission
+    await _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.requestPermission();
+
+    // Timezone initialization
+    tz.initializeTimeZones();
+    try {
+      final String localTz = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(localTz));
+    } catch (_) {
+      // Fallback to UTC if timezone lookup fails
+      tz.setLocalLocation(tz.getLocation('UTC'));
+    }
   }
 
   Future<void> scheduleDailyReminder({
@@ -19,16 +35,31 @@ class ReminderService {
     required int hour,
     required int minute,
   }) async {
-    debugPrint('Scheduling reminder with id=$id at ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}');
-    // Placeholder implementation: immediate notification to satisfy analyzer.
-    // TODO: Replace with timezone-aware daily scheduling using zonedSchedule.
-    await _plugin.show(
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduled = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+    if (scheduled.isBefore(now)) {
+      scheduled = scheduled.add(const Duration(days: 1));
+    }
+
+    debugPrint('Scheduling reminder id=$id at ${scheduled.toLocal()}');
+
+    await _plugin.zonedSchedule(
       id,
       'Weight Log Reminder',
       "Don't forget to record today's weight.",
+      scheduled,
       const NotificationDetails(
-        android: AndroidNotificationDetails('daily_weight', 'Daily Weight Reminder'),
+        android: AndroidNotificationDetails(
+          'daily_weight',
+          'Daily Weight Reminder',
+          channelDescription: 'Daily reminder to log weight',
+          importance: Importance.defaultImportance,
+          priority: Priority.defaultPriority,
+        ),
       ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.time,
     );
   }
 

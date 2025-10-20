@@ -1,5 +1,9 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart' as drift_native;
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'tables/goals_table.dart';
@@ -21,9 +25,9 @@ class AppDatabase extends _$AppDatabase {
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
-    // In-memory database for analyzer/builds without platform paths.
-    // Replace with a file-based NativeDatabase if persistence is required.
-    final executor = drift_native.NativeDatabase.memory();
+    final Directory dir = await getApplicationDocumentsDirectory();
+    final String dbPath = p.join(dir.path, 'daily_weight_tracker.db');
+    final executor = drift_native.NativeDatabase(File(dbPath));
     return executor;
   });
 }
