@@ -3,7 +3,7 @@
 
 part of 'app_database.dart';
 
-class _$AppDatabase extends GeneratedDatabase {
+abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
 
   @override
