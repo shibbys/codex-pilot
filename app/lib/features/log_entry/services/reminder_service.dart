@@ -1,9 +1,12 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:permission_handler/permission_handler.dart';
 
 class ReminderService {
   ReminderService(this._plugin);
@@ -17,7 +20,9 @@ class ReminderService {
     await _plugin.initialize(settings);
 
     // Android 13+ runtime notification permission
-    await _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.requestPermission();
+    if (Platform.isAndroid) {
+      await Permission.notification.request();
+    }
 
     // Timezone initialization
     tz.initializeTimeZones();
