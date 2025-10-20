@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../dashboard/presentation/dashboard_page.dart';
 import '../../settings/presentation/settings_page.dart';
 import '../../../data/local/app_database.dart';
+import '../../../core/i18n/translations.dart';
 
 final allEntriesProvider = StreamProvider<List<Object?>>((ref) {
   final db = ref.watch(appDatabaseProvider);
@@ -21,8 +23,10 @@ class HistoryPage extends ConsumerWidget {
     // Current page is History, keep index fixed to 1.
     const int currentIndex = 1;
 
+    final locale = ref.watch(i18nControllerProvider).valueOrNull ?? const Locale('en');
+    final df = DateFormat('dd-MMM-yy', locale.languageCode);
     return Scaffold(
-      appBar: AppBar(title: const Text('History')),
+      appBar: AppBar(title: Text(tr(ref, 'historyTitle'))),
       body: ref.watch(allEntriesProvider).when(
             data: (items) => ListView.separated(
               padding: const EdgeInsets.all(16),
@@ -31,7 +35,7 @@ class HistoryPage extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final e = items[index] as dynamic;
                 final d = e.entryDate as DateTime;
-                final dateStr = '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+                final dateStr = df.format(d);
                 return ListTile(
                   leading: const Icon(Icons.monitor_weight),
                   title: Text('${(e.weightKg as double).toStringAsFixed(1)} kg'),
@@ -57,10 +61,10 @@ class HistoryPage extends ConsumerWidget {
               break;
           }
         },
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.history_outlined), selectedIcon: Icon(Icons.history), label: 'History'),
-          NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: 'Settings'),
+        destinations: [
+          NavigationDestination(icon: const Icon(Icons.dashboard_outlined), selectedIcon: const Icon(Icons.dashboard), label: tr(ref, 'home')),
+          NavigationDestination(icon: const Icon(Icons.history_outlined), selectedIcon: const Icon(Icons.history), label: tr(ref, 'history')),
+          NavigationDestination(icon: const Icon(Icons.settings_outlined), selectedIcon: const Icon(Icons.settings), label: tr(ref, 'settings')),
         ],
       ),
     );

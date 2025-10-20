@@ -49,10 +49,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               Text(tr(ref, 'appearance'), style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 8),
               SegmentedButton<ThemeMode>(
-                segments: const <ButtonSegment<ThemeMode>>[
-                  ButtonSegment(value: ThemeMode.light, label: Text('Light'), icon: Icon(Icons.light_mode)),
-                  ButtonSegment(value: ThemeMode.dark, label: Text('Dark'), icon: Icon(Icons.dark_mode)),
-                  ButtonSegment(value: ThemeMode.system, label: Text('System'), icon: Icon(Icons.auto_mode)),
+                segments: <ButtonSegment<ThemeMode>>[
+                  ButtonSegment(value: ThemeMode.light, label: Text(tr(ref, 'light')), icon: const Icon(Icons.light_mode)),
+                  ButtonSegment(value: ThemeMode.dark, label: Text(tr(ref, 'dark')), icon: const Icon(Icons.dark_mode)),
+                  ButtonSegment(value: ThemeMode.system, label: Text(tr(ref, 'system')), icon: const Icon(Icons.auto_mode)),
                 ],
                 selected: <ThemeMode>{themeSettings.mode},
                 onSelectionChanged: (selection) {
@@ -80,7 +80,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     .toList(),
               ),
               const SizedBox(height: 24),
-              Text('Language', style: Theme.of(context).textTheme.titleLarge),
+              Text(tr(ref, 'language'), style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -101,14 +101,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ],
               ),
               const SizedBox(height: 24),
-              Text('Reminders', style: Theme.of(context).textTheme.titleLarge),
+              Text(tr(ref, 'remindersTitle'), style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 8),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ListTile(
                     leading: const Icon(Icons.schedule),
-                    title: const Text('Daily reminder time'),
+                    title: Text(tr(ref, 'dailyReminderTime')),
                     subtitle: Text(_time.format(context)),
                     onTap: () async {
                       final picked = await showTimePicker(
@@ -138,7 +138,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           }
                         },
                         icon: const Icon(Icons.alarm_add),
-                        label: const Text('Schedule'),
+                        label: Text(tr(ref, 'schedule')),
                       ),
                       const SizedBox(width: 12),
                       OutlinedButton.icon(
@@ -151,7 +151,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           }
                         },
                         icon: const Icon(Icons.alarm_off),
-                        label: const Text('Cancel'),
+                        label: Text(tr(ref, 'cancel')),
                       ),
                     ],
                   )
@@ -194,10 +194,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               break;
           }
         },
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.history_outlined), selectedIcon: Icon(Icons.history), label: 'History'),
-          NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: 'Settings'),
+        destinations: [
+          NavigationDestination(icon: const Icon(Icons.dashboard_outlined), selectedIcon: const Icon(Icons.dashboard), label: tr(ref, 'home')),
+          NavigationDestination(icon: const Icon(Icons.history_outlined), selectedIcon: const Icon(Icons.history), label: tr(ref, 'history')),
+          NavigationDestination(icon: const Icon(Icons.settings_outlined), selectedIcon: const Icon(Icons.settings), label: tr(ref, 'settings')),
         ],
       ),
     );
