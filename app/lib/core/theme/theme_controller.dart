@@ -50,8 +50,7 @@ class ThemeController extends AsyncNotifier<ThemeSettings> {
     final current = state.value ?? const ThemeSettings();
     state = AsyncValue.data(current.copyWith(seedColor: color));
     final prefs = await SharedPreferences.getInstance();
-    final argb = (color.alpha << 24) | (color.red << 16) | (color.green << 8) | color.blue;
-    await prefs.setInt(_accentColorKey, argb);
+    await prefs.setInt(_accentColorKey, color.toARGB32());
   }
 
   ThemeMode _resolveModeFromIndex(int? index) {

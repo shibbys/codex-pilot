@@ -7,6 +7,7 @@ import '../local/app_database.dart';
 class CsvService {
   CsvService(this._db);
 
+  // ignore: unused_field
   final AppDatabase _db;
 
   Future<File> exportEntries() async {
