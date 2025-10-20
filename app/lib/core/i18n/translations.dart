@@ -43,6 +43,9 @@ final _translations = <String, Map<String, String>>{
     'googleDriveSync': 'Google Drive Sync',
     'googleDriveSyncSubtitle': 'Connect your Drive account to sync entries.',
     'scheduledAt': 'Scheduled daily reminder at',
+    'by': 'by',
+    'days': 'Days',
+    'entries': 'Entries',
   },
   'pt': {
     'appTitle': 'Pesândinho',
@@ -84,6 +87,9 @@ final _translations = <String, Map<String, String>>{
     'googleDriveSync': 'Sincronizar com Google Drive',
     'googleDriveSyncSubtitle': 'Conecte sua conta do Drive para sincronizar entradas.',
     'scheduledAt': 'Lembrete diário agendado às',
+    'by': 'até',
+    'days': 'Dias',
+    'entries': 'Entradas',
   },
 };
 
@@ -110,3 +116,4 @@ String tr(WidgetRef ref, String key) {
   final locale = ref.watch(i18nControllerProvider).value ?? const Locale('en');
   return _translations[locale.languageCode]?[key] ?? key;
 }
+
