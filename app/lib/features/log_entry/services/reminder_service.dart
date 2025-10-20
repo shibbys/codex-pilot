@@ -84,7 +84,7 @@ class ReminderService {
     await prefs.remove(_minuteKey);
   }
 
-  Future<(int hour, int minute)?> loadSavedReminderTime() async {
+  Future<({int hour, int minute})?> loadSavedReminderTime() async {
     final prefs = await SharedPreferences.getInstance();
     final hour = prefs.getInt(_hourKey);
     final minute = prefs.getInt(_minuteKey);

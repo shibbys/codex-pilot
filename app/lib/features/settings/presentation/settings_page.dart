@@ -5,8 +5,6 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../log_entry/services/reminder_service.dart';
 
-final _reminderTimeProvider = StateProvider<TimeOfDay>((ref) => const TimeOfDay(hour: 8, minute: 0));
-
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
