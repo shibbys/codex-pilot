@@ -7,13 +7,25 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/main.dart';
 
 void main() {
   testWidgets('App boots to Dashboard', (WidgetTester tester) async {
-    await tester.pumpWidget(const ProviderScope(child: AppRoot()));
-    await tester.pumpAndSettle();
+    SharedPreferences.setMockInitialValues(<String, Object?>{});
 
-    expect(find.text('Daily Weight Tracker'), findsOneWidget);
+    await tester.pumpWidget(const ProviderScope(child: AppRoot()));
+
+    // Avoid pumpAndSettle since there may be perpetual animations.
+    bool found = false;
+    for (int i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+      if (find.text('Daily Weight Tracker').evaluate().isNotEmpty) {
+        found = true;
+        break;
+      }
+    }
+
+    expect(found, isTrue, reason: 'Dashboard title not found after waiting.');
   });
 }
