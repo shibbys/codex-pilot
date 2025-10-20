@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../history/presentation/history_page.dart';
 import '../../settings/presentation/settings_page.dart';
 import '../../log_entry/presentation/log_entry_page.dart';
+import '../../../data/local/app_database.dart';
 
-class DashboardPage extends StatelessWidget {
+final latestEntryProvider = StreamProvider<WeightEntriesData?>((ref) {
+  final db = ref.watch(appDatabaseProvider);
+  return db.watchLatestEntry();
+});
+
+class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
 
   static const String routePath = '/dashboard';
   static const String routeName = 'dashboard';
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final latest = ref.watch(latestEntryProvider).value;
+    final latestText = latest != null ? '${latest.weightKg.toStringAsFixed(1)} kg' : '-- kg';
     // Current page is Dashboard, keep index fixed to 0.
     const int currentIndex = 0;
 
@@ -28,12 +37,12 @@ class DashboardPage extends StatelessWidget {
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
-        children: const <Widget>[
-          _SummaryCard(title: 'Today\'s Weight', value: '-- kg'),
-          SizedBox(height: 12),
-          _SummaryCard(title: 'Trend', value: 'No data yet'),
-          SizedBox(height: 12),
-          _SummaryCard(title: 'Goal Progress', value: 'Set a goal to begin'),
+        children: <Widget>[
+          _SummaryCard(title: 'Latest Weight', value: latestText),
+          const SizedBox(height: 12),
+          const _SummaryCard(title: 'Trend', value: 'No data yet'),
+          const SizedBox(height: 12),
+          const _SummaryCard(title: 'Goal Progress', value: 'Set a goal to begin'),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(

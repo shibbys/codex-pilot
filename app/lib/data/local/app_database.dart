@@ -21,6 +21,35 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   int get schemaVersion => 1;
+
+  // Weight entries API
+  Future<int> addWeightEntry({
+    required DateTime date,
+    required double weightKg,
+    String? note,
+  }) {
+    return into(weightEntries).insert(
+      WeightEntriesCompanion.insert(
+        entryDate: date,
+        weightKg: weightKg,
+        note: Value(note),
+      ),
+    );
+  }
+
+  Stream<WeightEntriesData?> watchLatestEntry() {
+    final query = (select(weightEntries)
+          ..orderBy([(t) => OrderingTerm.desc(t.entryDate)])
+          ..limit(1))
+        .watchSingleOrNull();
+    return query;
+  }
+
+  Stream<List<WeightEntriesData>> watchAllEntries() {
+    return (select(weightEntries)
+          ..orderBy([(t) => OrderingTerm.desc(t.entryDate)]))
+        .watch();
+  }
 }
 
 LazyDatabase _openConnection() {
