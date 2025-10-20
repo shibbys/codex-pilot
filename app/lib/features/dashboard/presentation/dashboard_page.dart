@@ -5,10 +5,16 @@ import '../../history/presentation/history_page.dart';
 import '../../settings/presentation/settings_page.dart';
 import '../../log_entry/presentation/log_entry_page.dart';
 import '../../../data/local/app_database.dart';
+import '../../../core/i18n/translations.dart';
 
 final latestEntryProvider = StreamProvider<Object?>((ref) {
   final db = ref.watch(appDatabaseProvider);
   return db.watchLatestEntry();
+});
+
+final currentGoalProvider = StreamProvider<Object?>((ref) {
+  final db = ref.watch(appDatabaseProvider);
+  return db.watchCurrentGoal();
 });
 
 class DashboardPage extends ConsumerWidget {
@@ -20,6 +26,7 @@ class DashboardPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final latest = ref.watch(latestEntryProvider).value;
+    final goal = ref.watch(currentGoalProvider).value;
     String latestText = '-- kg';
     if (latest != null) {
       try {
@@ -27,15 +34,32 @@ class DashboardPage extends ConsumerWidget {
         latestText = '${w.toStringAsFixed(1)} kg';
       } catch (_) {}
     }
+    String goalText = tr(ref, 'goalProgress');
+    if (goal != null) {
+      try {
+        final g = goal as dynamic;
+        final target = (g.targetWeightKg as double).toStringAsFixed(1);
+        final date = g.targetDate as DateTime?;
+        goalText = date != null ? 'Target: $target kg by ${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}' : 'Target: $target kg';
+        if (latestText != '-- kg') {
+          final lw = (latest as dynamic).weightKg as double;
+          final diff = (lw - (g.targetWeightKg as double));
+          final remaining = diff > 0 ? '${diff.toStringAsFixed(1)} kg remaining' : 'Goal reached!';
+          goalText = '$goalText  •  $remaining';
+        }
+      } catch (_) {}
+    } else {
+      goalText = 'No goal set';
+    }
     // Current page is Dashboard, keep index fixed to 0.
     const int currentIndex = 0;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pesândinho'),
+        title: Text(tr(ref, 'dashboardTitle')),
         actions: [
           IconButton(
-            tooltip: 'Settings',
+            tooltip: tr(ref, 'settingsTitle'),
             icon: const Icon(Icons.settings),
             onPressed: () => context.go(SettingsPage.routePath),
           )
@@ -44,11 +68,11 @@ class DashboardPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: <Widget>[
-          _SummaryCard(title: 'Latest Weight', value: latestText),
+          _SummaryCard(title: tr(ref, 'latestWeight'), value: latestText),
           const SizedBox(height: 12),
-          const _SummaryCard(title: 'Trend', value: 'No data yet'),
+          _SummaryCard(title: tr(ref, 'goal'), value: goalText),
           const SizedBox(height: 12),
-          const _SummaryCard(title: 'Goal Progress', value: 'Set a goal to begin'),
+          _SummaryCard(title: tr(ref, 'trend'), value: '—'),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(

@@ -50,6 +50,32 @@ class AppDatabase extends _$AppDatabase {
           ..orderBy([(t) => OrderingTerm.desc(t.entryDate)]))
         .watch();
   }
+
+  // Goals API
+  Future<int> addGoal({
+    required double targetWeightKg,
+    DateTime? targetDate,
+    String? note,
+  }) {
+    return into(goals).insert(
+      GoalsCompanion.insert(
+        targetWeightKg: targetWeightKg,
+        targetDate: Value(targetDate),
+        note: Value(note),
+      ),
+    );
+  }
+
+  Stream<dynamic> watchCurrentGoal() {
+    return (select(goals)
+          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+          ..limit(1))
+        .watchSingleOrNull();
+  }
+
+  Stream<List<dynamic>> watchAllGoals() {
+    return (select(goals)..orderBy([(t) => OrderingTerm.desc(t.createdAt)])).watch();
+  }
 }
 
 LazyDatabase _openConnection() {
