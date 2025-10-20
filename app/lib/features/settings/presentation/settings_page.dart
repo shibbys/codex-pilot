@@ -70,7 +70,7 @@ class SettingsPage extends ConsumerWidget {
                     ListTile(
                       leading: const Icon(Icons.schedule),
                       title: const Text('Daily reminder time'),
-                      subtitle: Text('${time.format(context)}'),
+                      subtitle: Text(time.format(context)),
                       onTap: () async {
                         final picked = await showTimePicker(
                           context: context,
