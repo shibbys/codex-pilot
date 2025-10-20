@@ -146,10 +146,10 @@ class DashboardPage extends ConsumerWidget {
           TrendChart(days: ref.watch(chartDaysProvider), byDays: ref.watch(chartByDaysProvider)),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: () => context.go(LogEntryPage.routePath),
-        icon: const Icon(Icons.add),
-        label: Text(tr(ref, 'logWeight')),
+        tooltip: tr(ref, 'logWeight'),
+        child: const Icon(Icons.add),
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: currentIndex,
@@ -171,8 +171,7 @@ class DashboardPage extends ConsumerWidget {
           NavigationDestination(icon: const Icon(Icons.history_outlined), selectedIcon: const Icon(Icons.history), label: tr(ref, 'history')),
           NavigationDestination(icon: const Icon(Icons.settings_outlined), selectedIcon: const Icon(Icons.settings), label: tr(ref, 'settings')),
         ],
-      ),
-    );
+      );
   }
 }
 
@@ -194,10 +193,8 @@ class TrendChart extends ConsumerWidget {
       }
     }();
 
-    return SizedBox(
-      height: 220,
-      child: Card(
-        child: Padding(
+    return Card(
+      child: Padding(
           padding: const EdgeInsets.all(12),
           child: entriesAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -416,9 +413,17 @@ class TrendChart extends ConsumerWidget {
                 }
 
                 double? etaDays;
-                if (byDays && slope != null && slope != 0) {
-                  final est = delta / slope;
-                  if (est >= 0) etaDays = est;
+                if (slope != null && slope != 0) {
+                  double stepDays = 1;
+                  if (!byDays && xDates.length >= 2) {
+                    final totalDays = (xDates.last.difference(xDates.first).inDays).abs();
+                    if (totalDays > 0) {
+                      stepDays = totalDays / (xDates.length - 1);
+                    }
+                  }
+                  final estSteps = delta / slope;
+                  final estDays = estSteps * stepDays;
+                  if (estDays >= 0) etaDays = estDays;
                 }
 
                 // Needed per day if goal has a deadline (from DB goal targetDate)
@@ -495,7 +500,7 @@ class TrendChart extends ConsumerWidget {
 
               return Column(
                 children: [
-                  SizedBox(height: 260, child: chart),
+                  SizedBox(height: 160, child: chart),
                   const SizedBox(height: 8),
                   metricsCard(),
                 ],
@@ -591,7 +596,10 @@ class _SummaryCard extends StatelessWidget {
           children: <Widget>[
             Text(title, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            Text(value, style: Theme.of(context).textTheme.headlineSmall),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontSize: 22),
+            ),
           ],
         ),
       ),
