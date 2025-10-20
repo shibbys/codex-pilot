@@ -7,14 +7,33 @@ import '../../log_entry/services/reminder_service.dart';
 
 final _reminderTimeProvider = StateProvider<TimeOfDay>((ref) => const TimeOfDay(hour: 8, minute: 0));
 
-class SettingsPage extends ConsumerWidget {
+class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
   static const String routePath = '/settings';
   static const String routeName = 'settings';
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends ConsumerState<SettingsPage> {
+  TimeOfDay _time = const TimeOfDay(hour: 8, minute: 0);
+
+  @override
+  void initState() {
+    super.initState();
+    // Load saved time and update local state.
+    Future.microtask(() async {
+      final saved = await ref.read(reminderServiceProvider).loadSavedReminderTime();
+      if (saved != null && mounted) {
+        setState(() => _time = TimeOfDay(hour: saved.hour, minute: saved.minute));
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final themeSettingsAsync = ref.watch(themeControllerProvider);
 
     return Scaffold(
@@ -62,22 +81,20 @@ class SettingsPage extends ConsumerWidget {
               const SizedBox(height: 32),
               Text('Reminders', style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 8),
-              Consumer(builder: (context, ref, _) {
-                final time = ref.watch(_reminderTimeProvider);
-                return Column(
+              Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     ListTile(
                       leading: const Icon(Icons.schedule),
                       title: const Text('Daily reminder time'),
-                      subtitle: Text(time.format(context)),
+                      subtitle: Text(_time.format(context)),
                       onTap: () async {
                         final picked = await showTimePicker(
                           context: context,
-                          initialTime: time,
+                          initialTime: _time,
                         );
                         if (picked != null) {
-                          ref.read(_reminderTimeProvider.notifier).state = picked;
+                          setState(() => _time = picked);
                         }
                       },
                     ),
@@ -86,7 +103,7 @@ class SettingsPage extends ConsumerWidget {
                       children: [
                         ElevatedButton.icon(
                           onPressed: () async {
-                            final t = ref.read(_reminderTimeProvider);
+                            final t = _time;
                             await ref.read(reminderServiceProvider).scheduleDailyReminder(
                                   id: 100,
                                   hour: t.hour,
@@ -117,8 +134,7 @@ class SettingsPage extends ConsumerWidget {
                       ],
                     )
                   ],
-                );
-              }),
+                ),
               const Divider(),
               Text('Data Management', style: Theme.of(context).textTheme.titleLarge),
               const ListTile(

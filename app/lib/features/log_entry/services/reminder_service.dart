@@ -7,11 +7,14 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ReminderService {
   ReminderService(this._plugin);
 
   final FlutterLocalNotificationsPlugin _plugin;
+  static const _hourKey = 'reminder_hour';
+  static const _minuteKey = 'reminder_minute';
 
   Future<void> initialize() async {
     const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -66,11 +69,34 @@ class ReminderService {
       uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time,
     );
+
+    // Persist selection
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_hourKey, hour);
+    await prefs.setInt(_minuteKey, minute);
   }
 
   Future<void> cancelReminder(int id) async {
     debugPrint('Cancel reminder id=$id');
     await _plugin.cancel(id);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_hourKey);
+    await prefs.remove(_minuteKey);
+  }
+
+  Future<(int hour, int minute)?> loadSavedReminderTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hour = prefs.getInt(_hourKey);
+    final minute = prefs.getInt(_minuteKey);
+    if (hour == null || minute == null) return null;
+    return (hour: hour, minute: minute);
+  }
+
+  Future<void> rescheduleSavedDailyReminder({required int id}) async {
+    final saved = await loadSavedReminderTime();
+    if (saved != null) {
+      await scheduleDailyReminder(id: id, hour: saved.hour, minute: saved.minute);
+    }
   }
 
   Future<void> snoozeReminder({

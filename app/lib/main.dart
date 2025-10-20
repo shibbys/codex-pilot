@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -22,8 +23,15 @@ class _AppRootState extends ConsumerState<AppRoot> {
   @override
   void initState() {
     super.initState();
-    // Initialize local notifications + timezone.
-    Future.microtask(() => ref.read(reminderServiceProvider).initialize());
+    // Initialize local notifications + timezone and reschedule saved reminders.
+    // Skip during widget tests to avoid platform channel hangs.
+    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+      Future.microtask(() async {
+        final svc = ref.read(reminderServiceProvider);
+        await svc.initialize();
+        await svc.rescheduleSavedDailyReminder(id: 100);
+      });
+    }
   }
 
   @override
