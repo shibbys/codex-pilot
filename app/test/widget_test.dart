@@ -12,7 +12,7 @@ import 'package:app/main.dart';
 
 void main() {
   testWidgets('App boots to Dashboard', (WidgetTester tester) async {
-    SharedPreferences.setMockInitialValues(<String, Object?>{});
+    SharedPreferences.setMockInitialValues(<String, Object>{});
 
     await tester.pumpWidget(const ProviderScope(child: AppRoot()));
 
@@ -20,7 +20,7 @@ void main() {
     bool found = false;
     for (int i = 0; i < 30; i++) {
       await tester.pump(const Duration(milliseconds: 100));
-      if (find.text('Daily Weight Tracker').evaluate().isNotEmpty) {
+      if (find.text('Pesândinho').evaluate().isNotEmpty) {
         found = true;
         break;
       }
