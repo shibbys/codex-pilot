@@ -100,9 +100,9 @@ class DashboardPage extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: <Widget>[
           _SummaryCard(title: tr(ref, 'latestWeight'), value: latestText),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           _SummaryCard(title: tr(ref, 'goal'), value: goalText),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Row(
             children: [
               ChoiceChip(
@@ -305,6 +305,7 @@ class TrendChart extends ConsumerWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
+                        reservedSize: 40,
                         interval: 1,
                         getTitlesWidget: (value, meta) {
                           final i = value.round();
@@ -373,7 +374,7 @@ class TrendChart extends ConsumerWidget {
                                 fontWeight: FontWeight.w600,
                               ) ??
                               const TextStyle(color: Colors.black);
-                          return LineTooltipItem('${t.y.toStringAsFixed(1)} kg\n$dateLabel', txtStyle);
+                          return LineTooltipItem('${t.y.toStringAsFixed(1)} kg`n$dateLabel', txtStyle);
                         }).toList();
                       },
                     ),
@@ -460,7 +461,7 @@ class TrendChart extends ConsumerWidget {
                           children: [
                             const Icon(Icons.trending_up, size: 16),
                             const SizedBox(width: 8),
-                            Text('${tr(ref, 'trend')}: ${(slope ?? 0).toStringAsFixed(2)} kg/${byDays ? tr(ref, 'daysShort') : tr(ref, 'entriesShort')}', style: theme.textTheme.bodyMedium),
+                            Text('${tr(ref, 'trend')}: ${(slope ?? 0).toStringAsFixed(2)} kg/${tr(ref, 'daysShort')}', style: theme.textTheme.bodyMedium),
                           ],
                         ),
                         const SizedBox(height: 6),
@@ -482,7 +483,7 @@ class TrendChart extends ConsumerWidget {
                             children: [
                               const Icon(Icons.speed, size: 16),
                               const SizedBox(width: 8),
-                              Text('${tr(ref, 'neededPerDay')}: ${neededPerDay.abs().toStringAsFixed(2)} kg/${tr(ref, 'daysShort')}', style: theme.textTheme.bodyMedium),
+                              Text('${tr(ref, 'average')}: ${neededPerDay.toStringAsFixed(2)} kg/${tr(ref, 'daysShort')}', style: theme.textTheme.bodyMedium),
                             ],
                           ),
                         ],
@@ -494,7 +495,7 @@ class TrendChart extends ConsumerWidget {
 
               return Column(
                 children: [
-                  SizedBox(height: 220, child: chart),
+                  SizedBox(height: 260, child: chart),
                   const SizedBox(height: 8),
                   metricsCard(),
                 ],
@@ -584,7 +585,7 @@ class _SummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -597,3 +598,4 @@ class _SummaryCard extends StatelessWidget {
     );
   }
 }
+
