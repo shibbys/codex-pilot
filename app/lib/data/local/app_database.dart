@@ -30,6 +30,9 @@ LazyDatabase _openConnection() {
 
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
   final database = AppDatabase();
-  ref.onDispose(database.close);
+  ref.onDispose(() {
+    // Ensure the async close() is invoked explicitly.
+    database.close();
+  });
   return database;
 });
