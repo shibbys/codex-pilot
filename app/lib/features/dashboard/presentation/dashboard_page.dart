@@ -416,7 +416,7 @@ class TrendChart extends ConsumerWidget {
 
                 double? etaDays;
                 if (byDays && slope != null && slope != 0) {
-                  final est = delta / slope!;
+                  final est = delta / slope;
                   if (est >= 0) etaDays = est;
                 }
 
@@ -432,7 +432,7 @@ class TrendChart extends ConsumerWidget {
                 } catch (_) {}
                 if (deadline != null) {
                   final now = DateTime.now();
-                  final remaining = deadline!.difference(DateTime(now.year, now.month, now.day)).inDays;
+                  final remaining = deadline.difference(DateTime(now.year, now.month, now.day)).inDays;
                   if (remaining > 0) {
                     neededPerDay = delta / remaining;
                   }
@@ -500,6 +500,73 @@ class TrendChart extends ConsumerWidget {
                 ],
               );
             },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class FullscreenChartPage extends ConsumerStatefulWidget {
+  const FullscreenChartPage({required this.days, required this.byDays, super.key});
+  final int days;
+  final bool byDays;
+
+  @override
+  ConsumerState<FullscreenChartPage> createState() => _FullscreenChartPageState();
+}
+
+class _FullscreenChartPageState extends ConsumerState<FullscreenChartPage> {
+  late int _days;
+  late bool _byDays;
+
+  @override
+  void initState() {
+    super.initState();
+    _days = widget.days;
+    _byDays = widget.byDays;
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+  }
+
+  @override
+  void dispose() {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(tr(ref, 'fullscreen'))),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  ChoiceChip(label: const Text('7'), selected: _days == 7, onSelected: (_) => setState(() => _days = 7)),
+                  const SizedBox(width: 8),
+                  ChoiceChip(label: const Text('15'), selected: _days == 15, onSelected: (_) => setState(() => _days = 15)),
+                  const SizedBox(width: 8),
+                  ChoiceChip(label: const Text('30'), selected: _days == 30, onSelected: (_) => setState(() => _days = 30)),
+                  const Spacer(),
+                  FilterChip(
+                    label: Text(_byDays ? tr(ref, 'days') : tr(ref, 'entries')),
+                    selected: _byDays,
+                    onSelected: (v) => setState(() => _byDays = v),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Expanded(child: TrendChart(days: _days, byDays: _byDays)),
+            ],
           ),
         ),
       ),
