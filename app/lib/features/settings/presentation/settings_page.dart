@@ -198,25 +198,4 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 }
-              const SizedBox(height: 24),
-              Text('Language', style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.language),
-                  const SizedBox(width: 12),
-                  DropdownButton<Locale>(
-                    value: localeAsync.valueOrNull ?? const Locale('en'),
-                    items: const [
-                      DropdownMenuItem(value: Locale('en'), child: Text('English')),
-                      DropdownMenuItem(value: Locale('pt'), child: Text('Português')),
-                    ],
-                    onChanged: (loc) {
-                      if (loc != null) {
-                        ref.read(i18nControllerProvider.notifier).setLocale(loc);
-                      }
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
+
