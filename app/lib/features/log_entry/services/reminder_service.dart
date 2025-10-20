@@ -3,7 +3,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:flutter_native_timezone/flutter_native_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:permission_handler/permission_handler.dart';
@@ -30,7 +30,7 @@ class ReminderService {
     // Timezone initialization
     tz.initializeTimeZones();
     try {
-      final String localTz = await FlutterTimezone.getLocalTimezone();
+      final String localTz = await FlutterNativeTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(localTz));
     } catch (_) {
       // Fallback to UTC if timezone lookup fails
