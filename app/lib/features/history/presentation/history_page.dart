@@ -11,10 +11,8 @@ class HistoryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final location = GoRouter.of(context).location;
-    int currentIndex = 1;
-    if (location.startsWith(DashboardPage.routePath)) currentIndex = 0;
-    if (location.startsWith(SettingsPage.routePath)) currentIndex = 2;
+    // Current page is History, keep index fixed to 1.
+    const int currentIndex = 1;
 
     return Scaffold(
       appBar: AppBar(title: const Text('History')),

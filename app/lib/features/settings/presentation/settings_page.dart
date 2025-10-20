@@ -35,10 +35,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Widget build(BuildContext context) {
     final themeSettingsAsync = ref.watch(themeControllerProvider);
 
-    final location = GoRouter.of(context).location;
-    int currentIndex = 2;
-    if (location.startsWith('/dashboard')) currentIndex = 0;
-    if (location.startsWith('/history')) currentIndex = 1;
+    // Current page is Settings, keep index fixed to 2.
+    const int currentIndex = 2;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),

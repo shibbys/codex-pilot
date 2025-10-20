@@ -12,10 +12,8 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final location = GoRouter.of(context).location;
-    int currentIndex = 0;
-    if (location.startsWith(HistoryPage.routePath)) currentIndex = 1;
-    if (location.startsWith(SettingsPage.routePath)) currentIndex = 2;
+    // Current page is Dashboard, keep index fixed to 0.
+    const int currentIndex = 0;
 
     return Scaffold(
       appBar: AppBar(
