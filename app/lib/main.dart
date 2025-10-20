@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
@@ -53,6 +54,11 @@ class _AppRootState extends ConsumerState<AppRoot> {
         theme: buildLightTheme(settings.seedColor),
         darkTheme: buildDarkTheme(settings.seedColor),
         themeMode: settings.mode,
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
         locale: localeAsync.valueOrNull,
         supportedLocales: const [Locale('en'), Locale('pt')],
         routerConfig: router,
