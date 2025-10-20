@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../core/i18n/translations.dart';
 import '../../log_entry/services/reminder_service.dart';
+import '../../../data/local/app_database.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -205,7 +206,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
 class _GoalEditor extends ConsumerStatefulWidget {
   @override
-  State<_GoalEditor> createState() => _GoalEditorState();
+  ConsumerState<_GoalEditor> createState() => _GoalEditorState();
 }
 
 class _GoalEditorState extends ConsumerState<_GoalEditor> {
@@ -275,10 +276,11 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
               final raw = _targetCtrl.text.trim().replaceAll(',', '.');
               final target = double.tryParse(raw);
               if (target == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                messenger.showSnackBar(
                   SnackBar(content: Text(tr(ref, 'enterValidWeight'))),
                 );
                 return;
@@ -290,9 +292,8 @@ class _GoalEditorState extends ConsumerState<_GoalEditor> {
                 targetDate: _targetDate,
                 note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
               );
-              if (!mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(tr(ref, 'goal') + ' ' + tr(ref, 'save'))),
+              messenger.showSnackBar(
+                SnackBar(content: Text('${tr(ref, 'goal')} ${tr(ref, 'save')}')),
               );
             },
             icon: const Icon(Icons.flag),
