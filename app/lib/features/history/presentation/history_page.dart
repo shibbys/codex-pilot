@@ -24,7 +24,6 @@ class HistoryPage extends ConsumerWidget {
     const int currentIndex = 1;
 
     final locale = ref.watch(i18nControllerProvider).valueOrNull ?? const Locale('en');
-    final df = DateFormat('dd-MMM-yy', locale.languageCode);
     return Scaffold(
       appBar: AppBar(title: Text(tr(ref, 'historyTitle'))),
       body: ref.watch(allEntriesProvider).when(
@@ -35,7 +34,14 @@ class HistoryPage extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final e = items[index] as dynamic;
                 final d = e.entryDate as DateTime;
-                final dateStr = df.format(d);
+                // Format as dd/MMM/yy with title-cased month and no trailing dot
+                final day = DateFormat('dd', locale.languageCode).format(d);
+                var mon = DateFormat('MMM', locale.languageCode).format(d).replaceAll('.', '');
+                if (mon.isNotEmpty) {
+                  mon = mon[0].toUpperCase() + mon.substring(1);
+                }
+                final yr = DateFormat('yy', locale.languageCode).format(d);
+                final dateStr = '$day/$mon/$yr';
                 return ListTile(
                   leading: const Icon(Icons.monitor_weight),
                   title: Text('${(e.weightKg as double).toStringAsFixed(1)} kg'),

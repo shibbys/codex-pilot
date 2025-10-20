@@ -51,6 +51,24 @@ class DashboardPage extends ConsumerWidget {
     } else {
       goalText = 'No goal set';
     }
+    // Compact goal display: e.g., 100kg by 03/Jan/26
+    if (goal != null) {
+      try {
+        final g = goal as dynamic;
+        final tgt = (g.targetWeightKg as double);
+        final targetStr = tgt % 1 == 0 ? '${tgt.toInt()}kg' : '${tgt.toStringAsFixed(1)}kg';
+        final date = g.targetDate as DateTime?;
+        if (date != null) {
+          final dd = DateFormat('dd').format(date);
+          var mon = DateFormat('MMM').format(date).replaceAll('.', '');
+          if (mon.isNotEmpty) mon = mon[0].toUpperCase() + mon.substring(1);
+          final yy = DateFormat('yy').format(date);
+          goalText = '$targetStr by $dd/$mon/$yy';
+        } else {
+          goalText = targetStr;
+        }
+      } catch (_) {}
+    }
     // Current page is Dashboard, keep index fixed to 0.
     const int currentIndex = 0;
 
