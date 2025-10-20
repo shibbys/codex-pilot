@@ -46,6 +46,14 @@ final _translations = <String, Map<String, String>>{
     'by': 'by',
     'days': 'Days',
     'entries': 'Entries',
+    'toGoal': 'to goal',
+    'eta': 'ETA',
+    'daysShort': 'd',
+    'entriesShort': 'entries',
+    'neededPerDay': 'needed/day',
+    'movingAway': 'moving away',
+    'noDeadline': 'no deadline',
+    'fullscreen': 'Full screen',
   },
   'pt': {
     'appTitle': 'Pesândinho',
@@ -90,6 +98,14 @@ final _translations = <String, Map<String, String>>{
     'by': 'até',
     'days': 'Dias',
     'entries': 'Entradas',
+    'toGoal': 'para a meta',
+    'eta': 'Prev.',
+    'daysShort': 'd',
+    'entriesShort': 'entradas',
+    'neededPerDay': 'necessário/dia',
+    'movingAway': 'afastando da meta',
+    'noDeadline': 'sem prazo',
+    'fullscreen': 'Tela cheia',
   },
 };
 
@@ -116,4 +132,3 @@ String tr(WidgetRef ref, String key) {
   final locale = ref.watch(i18nControllerProvider).value ?? const Locale('en');
   return _translations[locale.languageCode]?[key] ?? key;
 }
-

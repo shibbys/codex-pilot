@@ -1,4 +1,6 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -126,6 +128,18 @@ class DashboardPage extends ConsumerWidget {
                 selected: ref.watch(chartByDaysProvider),
                 onSelected: (v) => ref.read(chartByDaysProvider.notifier).state = v,
               ),
+              const SizedBox(width: 8),
+              IconButton(
+                tooltip: tr(ref, 'fullscreen'),
+                icon: const Icon(Icons.fullscreen),
+                onPressed: () async {
+                  final days = ref.read(chartDaysProvider);
+                  final byDays = ref.read(chartByDaysProvider);
+                  await Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => FullscreenChartPage(days: days, byDays: byDays),
+                  ));
+                },
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -195,11 +209,13 @@ class TrendChart extends ConsumerWidget {
 
               List<dynamic> list = List<dynamic>.from(items);
               List<FlSpot> series = [];
+              final List<DateTime> xDates = [];
               if (!byDays) {
                 final recent = list.take(days).toList().reversed.toList();
                 for (int i = 0; i < recent.length; i++) {
                   final w = (recent[i] as dynamic).weightKg as double;
                   series.add(FlSpot(i.toDouble(), w));
+                  xDates.add((recent[i] as dynamic).entryDate as DateTime);
                 }
               } else {
                 final now = DateTime.now();
@@ -219,6 +235,7 @@ class TrendChart extends ConsumerWidget {
                 int idx = 0;
                 for (final v in map.values) {
                   if (v != null) series.add(FlSpot(idx.toDouble(), v));
+                  xDates.add(DateTime(start.year, start.month, start.day).add(Duration(days: idx)));
                   idx++;
                 }
               }
@@ -244,28 +261,123 @@ class TrendChart extends ConsumerWidget {
                 ];
               }
 
-              return LineChart(
+              // Axis labels: bottom shows dd/MM on a few evenly spaced points
+              List<String> bottomLabels = List.generate(xDates.length, (i) {
+                final d = xDates[i];
+                final dd = d.day.toString().padLeft(2, '0');
+                final mm = d.month.toString().padLeft(2, '0');
+                return '$dd/$mm';
+              });
+
+              // Compute y-bounds with padding
+              double minY = series.first.y;
+              double maxY = series.first.y;
+              for (final s in series) {
+                if (s.y < minY) minY = s.y;
+                if (s.y > maxY) maxY = s.y;
+              }
+              if (goalWeight != null) {
+                if (goalWeight < minY) minY = goalWeight;
+                if (goalWeight > maxY) maxY = goalWeight;
+              }
+              final padding = (maxY - minY).abs() * 0.1 + 0.5;
+              minY -= padding;
+              maxY += padding;
+
+              final chart = LineChart(
                 LineChartData(
+                  minX: 0,
+                  maxX: series.last.x,
+                  minY: minY,
+                  maxY: maxY,
                   gridData: const FlGridData(show: false),
-                  titlesData: const FlTitlesData(show: false),
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 36,
+                        interval: ((maxY - minY) / 2).clamp(0.5, double.infinity),
+                        getTitlesWidget: (value, meta) {
+                          return Text(value.toStringAsFixed(0), style: Theme.of(context).textTheme.bodySmall);
+                        },
+                      ),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        interval: 1,
+                        getTitlesWidget: (value, meta) {
+                          final i = value.round();
+                          if (i < 0 || i >= bottomLabels.length) return const SizedBox.shrink();
+                          final maxLabels = 6;
+                          final step = (bottomLabels.length / maxLabels).ceil().clamp(1, 9999);
+                          if (i % step != 0 && i != bottomLabels.length - 1) {
+                            return const SizedBox.shrink();
+                          }
+                          final rotate = bottomLabels.length > 10;
+                          final label = Text(
+                            bottomLabels[i],
+                            style: Theme.of(context).textTheme.bodySmall,
+                          );
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: rotate
+                                ? Transform.rotate(angle: -math.pi / 4, child: label)
+                                : label,
+                          );
+                        },
+                      ),
+                    ),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  ),
                   borderData: FlBorderData(show: true, border: const Border.fromBorderSide(BorderSide(color: Colors.grey))),
                   lineBarsData: [
                     LineChartBarData(
                       spots: series,
                       isCurved: true,
                       color: Theme.of(context).colorScheme.primary,
-                      dotData: const FlDotData(show: false),
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
+                          radius: 3,
+                          color: Theme.of(context).colorScheme.primary,
+                          strokeWidth: 1.5,
+                          strokeColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                        ),
+                      ),
                     ),
                     if (trend.isNotEmpty)
                       LineChartBarData(
                         spots: trend,
                         isCurved: false,
-                        color: Theme.of(context).colorScheme.secondary,
+                        color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
                         dotData: const FlDotData(show: false),
                         dashArray: [8, 4],
-                        strokeWidth: 2,
+                        barWidth: 2,
                       ),
                   ],
+                  lineTouchData: LineTouchData(
+                    enabled: true,
+                    touchTooltipData: LineTouchTooltipData(
+                      getTooltipColor: (_) => Theme.of(context).colorScheme.surface.withValues(alpha: 0.95),
+                      tooltipRoundedRadius: 8,
+                      fitInsideHorizontally: true,
+                      fitInsideVertically: true,
+                      getTooltipItems: (touchedSpots) {
+                        return touchedSpots.map((t) {
+                          final i = t.x.round().clamp(0, bottomLabels.length - 1);
+                          final dateLabel = bottomLabels[i];
+                          final txtStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontWeight: FontWeight.w600,
+                              ) ??
+                              const TextStyle(color: Colors.black);
+                          return LineTooltipItem('${t.y.toStringAsFixed(1)} kg\n$dateLabel', txtStyle);
+                        }).toList();
+                      },
+                    ),
+                  ),
                   extraLinesData: ExtraLinesData(
                     horizontalLines: [
                       if (goalWeight != null)
@@ -278,6 +390,114 @@ class TrendChart extends ConsumerWidget {
                     ],
                   ),
                 ),
+              );
+
+              // Goal distance and ETA / needed per day card
+              Widget metricsCard() {
+                double? goal = goalWeight;
+                final theme = Theme.of(context);
+                if (goal == null) return const SizedBox.shrink();
+                final last = series.last.y;
+                final delta = goal - last; // + need to gain, - need to lose
+
+                // Trend slope per x-unit
+                double? slope;
+                {
+                  final n = series.length;
+                  final sumX = series.fold<double>(0, (s, p) => s + p.x);
+                  final sumY = series.fold<double>(0, (s, p) => s + p.y);
+                  final sumXX = series.fold<double>(0, (s, p) => s + p.x * p.x);
+                  final sumXY = series.fold<double>(0, (s, p) => s + p.x * p.y);
+                  final denom2 = (n * sumXX - sumX * sumX);
+                  if (denom2 != 0) {
+                    slope = (n * sumXY - sumX * sumY) / denom2;
+                  }
+                }
+
+                double? etaDays;
+                if (byDays && slope != null && slope != 0) {
+                  final est = delta / slope!;
+                  if (est >= 0) etaDays = est;
+                }
+
+                // Needed per day if goal has a deadline (from DB goal targetDate)
+                double? neededPerDay;
+                DateTime? deadline;
+                try {
+                  // Find a target date from current goal provider
+                  final g = ref.read(currentGoalProvider).value;
+                  if (g != null) {
+                    deadline = (g as dynamic).targetDate as DateTime?;
+                  }
+                } catch (_) {}
+                if (deadline != null) {
+                  final now = DateTime.now();
+                  final remaining = deadline!.difference(DateTime(now.year, now.month, now.day)).inDays;
+                  if (remaining > 0) {
+                    neededPerDay = delta / remaining;
+                  }
+                }
+
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              delta >= 0 ? Icons.north_east : Icons.south_east,
+                              size: 16,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                            const SizedBox(width: 8),
+                            Text('${delta.abs().toStringAsFixed(1)} kg ${tr(ref, 'toGoal')}', style: theme.textTheme.bodyMedium),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            const Icon(Icons.trending_up, size: 16),
+                            const SizedBox(width: 8),
+                            Text('${tr(ref, 'trend')}: ${(slope ?? 0).toStringAsFixed(2)} kg/${byDays ? tr(ref, 'daysShort') : tr(ref, 'entriesShort')}', style: theme.textTheme.bodyMedium),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        if (etaDays != null)
+                          Row(
+                            children: [
+                              const Icon(Icons.schedule, size: 16),
+                              const SizedBox(width: 8),
+                              Text('${tr(ref, 'eta')} ~ ${etaDays.round()}${tr(ref, 'daysShort')}', style: theme.textTheme.bodyMedium),
+                            ],
+                          )
+                        else if (slope != null && slope == 0)
+                          Text(tr(ref, 'movingAway'), style: theme.textTheme.bodyMedium)
+                        else
+                          const SizedBox.shrink(),
+                        if (neededPerDay != null) ...[
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              const Icon(Icons.speed, size: 16),
+                              const SizedBox(width: 8),
+                              Text('${tr(ref, 'neededPerDay')}: ${neededPerDay.abs().toStringAsFixed(2)} kg/${tr(ref, 'daysShort')}', style: theme.textTheme.bodyMedium),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              return Column(
+                children: [
+                  SizedBox(height: 220, child: chart),
+                  const SizedBox(height: 8),
+                  metricsCard(),
+                ],
               );
             },
           ),
