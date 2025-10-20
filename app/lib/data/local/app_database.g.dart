@@ -4,7 +4,7 @@
 part of 'app_database.dart';
 
 abstract class _$AppDatabase extends GeneratedDatabase {
-  _$AppDatabase(QueryExecutor e) : super(e);
+  _$AppDatabase(super.e);
 
   @override
   Iterable<TableInfo<Table, Object?>> get allTables => const <TableInfo<Table, Object?>>[];
