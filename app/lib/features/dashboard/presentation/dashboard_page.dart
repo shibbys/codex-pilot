@@ -509,8 +509,7 @@ class TrendChart extends ConsumerWidget {
             },
           ),
         ),
-      ),
-    );
+      );
   }
 }
 
