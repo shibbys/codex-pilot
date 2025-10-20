@@ -372,7 +372,7 @@ class TrendChart extends ConsumerWidget {
                                 fontWeight: FontWeight.w600,
                               ) ??
                               const TextStyle(color: Colors.black);
-                          return LineTooltipItem('${t.y.toStringAsFixed(1)} kg`n$dateLabel', txtStyle);
+                          return LineTooltipItem('${t.y.toStringAsFixed(1)} kg\n$dateLabel', txtStyle);
                         }).toList();
                       },
                     ),
