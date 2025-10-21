@@ -506,7 +506,8 @@ class TrendChart extends ConsumerWidget {
                           ],
                         ),
                         const SizedBox(height: 6),
-                        if (etaD != null) Row(\n                            children: [\n                              const Icon(Icons.schedule, size: 16),\n                              const SizedBox(width: 8),\n                              Builder(builder: (_) {\n                                final now = DateTime.now();\n                                final etaDate = DateTime(now.year, now.month, now.day).add(Duration(days: etaD!));\n                                final dd = DateFormat('dd', locale.languageCode).format(etaDate);\n                                var mon = DateFormat('MMM', locale.languageCode).format(etaDate).replaceAll('.', '').toLowerCase();\n                                final yy = DateFormat('yy', locale.languageCode).format(etaDate);\n                                final etaStr = '//';\n                                return Text(' ~  ( )', style: theme.textTheme.bodyMedium);\n                              }),\n                            ],\n                          ); return Row(
+                        if (etaD != null)
+                          Row(
                             children: [
                               const Icon(Icons.schedule, size: 16),
                               const SizedBox(width: 8),
@@ -521,7 +522,7 @@ class TrendChart extends ConsumerWidget {
                                 final yy = DateFormat('yy', locale.languageCode).format(etaDate);
                                 final etaStr = '$dd/$mon/$yy';
                                 return Text(
-                                  '${tr(ref, 'eta')} ~ \${etaD}${tr(ref, 'daysShort')} (${tr(ref, 'byApprox')} $etaStr)',
+                                  '${tr(ref, 'eta')} ~ ${etaD}${tr(ref, 'daysShort')} (${tr(ref, 'byApprox')} $etaStr)',
                                   style: theme.textTheme.bodyMedium,
                                 );
                               }),
