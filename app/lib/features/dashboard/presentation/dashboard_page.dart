@@ -124,27 +124,18 @@ class DashboardPage extends ConsumerWidget {
               ),
               const SizedBox(width: 8),
               ChoiceChip(
-                label: const Text('All'),
+                label: Text(tr(ref, 'all')),
                 selected: ref.watch(chartDaysProvider) == 0,
                 onSelected: (_) => ref.read(chartDaysProvider.notifier).state = 0,
               ),
               const Spacer(),
-              FilterChip(
-                label: Text(ref.watch(chartByDaysProvider) ? tr(ref, 'days') : tr(ref, 'entries')),
-                selected: ref.watch(chartByDaysProvider),
-                onSelected: (v) => ref.read(chartByDaysProvider.notifier).state = v,
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                tooltip: tr(ref, 'fullscreen'),
-                icon: const Icon(Icons.fullscreen),
-                onPressed: () async {
-                  final days = ref.read(chartDaysProvider);
-                  final byDays = ref.read(chartByDaysProvider);
-                  await Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => FullscreenChartPage(days: days, byDays: byDays),
-                  ));
-                },
+              Tooltip(
+                message: ref.watch(chartByDaysProvider) ? tr(ref, 'days') : tr(ref, 'entries'),
+                child: FilterChip(
+                  label: Icon(ref.watch(chartByDaysProvider) ? Icons.calendar_today : Icons.view_list),
+                  selected: ref.watch(chartByDaysProvider),
+                  onSelected: (v) => ref.read(chartByDaysProvider.notifier).state = v,
+                ),
               ),
             ],
           ),
@@ -571,7 +562,7 @@ class TrendChart extends ConsumerWidget {
               } else {
                 return Column(
                   children: [
-                    SizedBox(height: 160, child: chart),
+                    SizedBox(\n                      height: 160,\n                      child: Stack(\n                        children: [\n                          Positioned.fill(child: chart),\n                          Positioned(\n                            bottom: 6,\n                            right: 6,\n                            child: IconButton(\n                              tooltip: tr(ref, 'fullscreen'),\n                              icon: const Icon(Icons.fullscreen),\n                              onPressed: () async {\n                                await Navigator.of(context).push(MaterialPageRoute(\n                                  builder: (_) => FullscreenChartPage(days: days, byDays: byDays),\n                                ));\n                              },\n                            ),\n                          ),\n                        ],\n                      ),\n                    ),
                     if (showMetrics) ...[
                       const SizedBox(height: 8),
                       metricsCard(),
@@ -653,11 +644,16 @@ class _FullscreenChartPageState extends ConsumerState<FullscreenChartPage> {
                   ChoiceChip(label: const Text('15'), selected: _days == 15, onSelected: (_) => setState(() => _days = 15)),
                   const SizedBox(width: 8),
                   ChoiceChip(label: const Text('30'), selected: _days == 30, onSelected: (_) => setState(() => _days = 30)),
+                  const SizedBox(width: 8),
+                  ChoiceChip(label: Text(tr(ref, 'all')), selected: _days == 0, onSelected: (_) => setState(() => _days = 0)),
                   const Spacer(),
-                  FilterChip(
-                    label: Text(_byDays ? tr(ref, 'days') : tr(ref, 'entries')),
-                    selected: _byDays,
-                    onSelected: (v) => setState(() => _byDays = v),
+                  Tooltip(
+                    message: _byDays ? tr(ref, 'days') : tr(ref, 'entries'),
+                    child: FilterChip(
+                      label: Icon(_byDays ? Icons.calendar_today : Icons.view_list),
+                      selected: _byDays,
+                      onSelected: (v) => setState(() => _byDays = v),
+                    ),
                   ),
                 ],
               ),
