@@ -28,3 +28,5 @@ The scaffold should include the `app/pubspec.yaml`, `app/lib/main.dart`, and the
 2. Flesh out the reminder scheduling flow and snooze actions backed by `flutter_local_notifications`.
 3. Build dashboard, history, and settings flows iteratively, adding charts and data tables.
 4. Add data portability features (CSV export/import, optional Google Sheets integration).
+## Alpha Release
+See docs/RELEASE_NOTES.md for current capabilities, install steps, and the near-term UI polish roadmap.

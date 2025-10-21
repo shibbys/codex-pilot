@@ -46,4 +46,18 @@ Create an Android-first companion app that helps users log their daily weight, s
 - Social/accountability sharing features.
 - Multi-user support within a single app install.
 - Integration with smart scales via Bluetooth or third-party APIs.
+## Current Capabilities (Alpha)
+- Daily logging with editable history (edit/delete on tap).
+- Dashboard with Entries/Days charts, trendline, goal line, and ETA with date.
+- Timeframe chips: 7 / 15 / 30 / All; “All” forward-fills in Days mode.
+- Theming with preset seed colors and language selector (EN/PT).
+- Local notifications with daily reminder scheduling (Android-first; exact alarms fallback supported).
+- CSV export/import + share flow; import prompt to pre-clear existing logs.
 
+## Near-Term UI Polish (Planned)
+- Settings color picker: compact icon to open a picker dialog (strings: Personalizado, Resetar, Feito, Cancelar).
+- Chart header: title “Last X days/logs” (PT: “X últimos dias/registros”); fullscreen icon aligned far right.
+- Entries/Days toggle: icon only; remove checkmark, keep tooltip.
+- History list: trailing chevron, softer dividers.
+- Logging sheet: numeric formatter (comma/period), +/- nudge chips, autofocus/select all, light haptics.
+- Goal chip: small pill (“Goal 130kg”) linking to goal editor.
