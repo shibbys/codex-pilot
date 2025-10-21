@@ -122,6 +122,12 @@ class DashboardPage extends ConsumerWidget {
                 selected: ref.watch(chartDaysProvider) == 30,
                 onSelected: (_) => ref.read(chartDaysProvider.notifier).state = 30,
               ),
+              const SizedBox(width: 8),
+              ChoiceChip(
+                label: const Text('All'),
+                selected: ref.watch(chartDaysProvider) == 0,
+                onSelected: (_) => ref.read(chartDaysProvider.notifier).state = 0,
+              ),
               const Spacer(),
               FilterChip(
                 label: Text(ref.watch(chartByDaysProvider) ? tr(ref, 'days') : tr(ref, 'entries')),
@@ -215,8 +221,9 @@ class TrendChart extends ConsumerWidget {
               List<FlSpot> series = [];
               final List<DateTime> xDates = [];
               if (!byDays) {
-                // Entries mode: take latest N entries, then sort ascending by date for left->right chronology
-                final recent = list.take(days).toList();
+                // Entries mode
+                final takeAll = days == 0;
+                final recent = takeAll ? List<dynamic>.from(list) : list.take(days).toList();
                 recent.sort((a, b) => ((a as dynamic).entryDate as DateTime)
                     .compareTo(((b as dynamic).entryDate as DateTime)));
                 for (int i = 0; i < recent.length; i++) {
@@ -225,19 +232,34 @@ class TrendChart extends ConsumerWidget {
                   xDates.add((recent[i] as dynamic).entryDate as DateTime);
                 }
               } else {
-                // Anchor the window to the latest entry date so imported historical
-                // datasets render a full range even if there are no recent entries.
-                DateTime latest = DateTime.now();
-                try {
+                final takeAll = days == 0;
+                DateTime start;
+                DateTime end;
+                if (takeAll) {
+                  // From earliest entry to today
+                  DateTime earliest = DateTime.now();
+                  DateTime latest = DateTime(1900);
+                  for (final e in list) {
+                    final d = (e as dynamic).entryDate as DateTime;
+                    if (d.isBefore(earliest)) earliest = d;
+                    if (d.isAfter(latest)) latest = d;
+                  }
+                  start = DateTime(earliest.year, earliest.month, earliest.day);
+                  end = DateTime.now();
+                } else {
+                  // Anchor window to latest entry
+                  DateTime latest = DateTime.now();
                   for (final e in list) {
                     final d = (e as dynamic).entryDate as DateTime;
                     if (d.isAfter(latest)) latest = d;
                   }
-                } catch (_) {}
-                final base = DateTime(latest.year, latest.month, latest.day);
-                final start = base.subtract(Duration(days: days - 1));
+                  final base = DateTime(latest.year, latest.month, latest.day);
+                  start = base.subtract(Duration(days: days - 1));
+                  end = base;
+                }
+                final dayCount = end.difference(start).inDays + 1;
                 final map = <DateTime, double?>{};
-                for (int i = 0; i < days; i++) {
+                for (int i = 0; i < dayCount; i++) {
                   final d = DateTime(start.year, start.month, start.day).add(Duration(days: i));
                   map[d] = null;
                 }
@@ -462,21 +484,14 @@ class TrendChart extends ConsumerWidget {
                 }
                 final int? etaD = etaDays?.round();
 
-                // Needed per day if goal has a deadline (from DB goal targetDate)
-                double? neededPerDay;
-                DateTime? deadline;
-                try {
-                  // Find a target date from current goal provider
-                  final g = ref.read(currentGoalProvider).value;
-                  if (g != null) {
-                    deadline = (g as dynamic).targetDate as DateTime?;
-                  }
-                } catch (_) {}
-                if (deadline != null) {
-                  final now = DateTime.now();
-                  final remaining = deadline.difference(DateTime(now.year, now.month, now.day)).inDays;
-                  if (remaining > 0) {
-                    neededPerDay = delta / remaining;
+                // Average per day over selected window (or all), using first/last points
+                double? neededPerDay; // reuse UI slot for average
+                if (xDates.isNotEmpty) {
+                  final spanDays = (xDates.last.difference(xDates.first).inDays).abs();
+                  if (spanDays > 0) {
+                    neededPerDay = (series.last.y - series.first.y) / spanDays;
+                  } else {
+                    neededPerDay = 0;
                   }
                 }
 
@@ -522,7 +537,7 @@ class TrendChart extends ConsumerWidget {
                                 final yy = DateFormat('yy', locale.languageCode).format(etaDate);
                                 final etaStr = '$dd/$mon/$yy';
                                 return Text(
-                                  '${tr(ref, 'eta')} ~ ${etaD}${tr(ref, 'daysShort')} (${tr(ref, 'byApprox')} $etaStr)',
+                                  '${tr(ref, 'eta')} ~ $etaD${tr(ref, 'daysShort')} (${tr(ref, 'byApprox')} $etaStr)',
                                   style: theme.textTheme.bodyMedium,
                                 );
                               }),
@@ -689,8 +704,5 @@ class _SummaryCard extends StatelessWidget {
     );
   }
 }
-
-
-
 
 
