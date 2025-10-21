@@ -562,7 +562,31 @@ class TrendChart extends ConsumerWidget {
               } else {
                 return Column(
                   children: [
-                    SizedBox(\n                      height: 160,\n                      child: Stack(\n                        children: [\n                          Positioned.fill(child: chart),\n                          Positioned(\n                            bottom: 6,\n                            right: 6,\n                            child: IconButton(\n                              tooltip: tr(ref, 'fullscreen'),\n                              icon: const Icon(Icons.fullscreen),\n                              onPressed: () async {\n                                await Navigator.of(context).push(MaterialPageRoute(\n                                  builder: (_) => FullscreenChartPage(days: days, byDays: byDays),\n                                ));\n                              },\n                            ),\n                          ),\n                        ],\n                      ),\n                    ),
+                    SizedBox(
+                      height: 160,
+                      child: Stack(
+                        children: [
+                          Positioned.fill(child: chart),
+                          Positioned(
+                            bottom: 6,
+                            right: 6,
+                            child: IconButton(
+                              tooltip: tr(ref, 'fullscreen'),
+                              icon: const Icon(Icons.fullscreen),
+                              onPressed: () async {
+                                final days = ref.read(chartDaysProvider);
+                                final byDays = ref.read(chartByDaysProvider);
+                                await Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => FullscreenChartPage(days: days, byDays: byDays),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     if (showMetrics) ...[
                       const SizedBox(height: 8),
                       metricsCard(),
