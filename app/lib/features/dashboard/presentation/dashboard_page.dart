@@ -357,20 +357,26 @@ class TrendChart extends ConsumerWidget {
                 }
               }
 
-              // Compute y-bounds with padding
-              double minY = series.first.y;
-              double maxY = series.first.y;
+              // Compute y-bounds including goal and round to multiples of 5
+              double minYRaw = series.first.y;
+              double maxYRaw = series.first.y;
               for (final s in series) {
-                if (s.y < minY) minY = s.y;
-                if (s.y > maxY) maxY = s.y;
+                if (s.y < minYRaw) minYRaw = s.y;
+                if (s.y > maxYRaw) maxYRaw = s.y;
               }
               if (goalWeight != null) {
-                if (goalWeight < minY) minY = goalWeight;
-                if (goalWeight > maxY) maxY = goalWeight;
+                if (goalWeight < minYRaw) minYRaw = goalWeight;
+                if (goalWeight > maxYRaw) maxYRaw = goalWeight;
               }
-              final padding = (maxY - minY).abs() * 0.1 + 0.5;
-              minY -= padding;
-              maxY += padding;
+              double minY = (minYRaw / 5).floor() * 5;
+              double maxY = (maxYRaw / 5).ceil() * 5;
+              if (minY == maxY) {
+                minY -= 5;
+                maxY += 5;
+              }
+              final int yTickCount = 5;
+              final double yStep = (maxY - minY) / (yTickCount - 1);
+              final List<double> yTicks = List<double>.generate(yTickCount, (i) => (minY + i * yStep));
 
               final chart = LineChart(
                 LineChartData(
@@ -383,9 +389,12 @@ class TrendChart extends ConsumerWidget {
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        reservedSize: 36,
-                        interval: ((maxY - minY) / 2).clamp(0.5, double.infinity),
+                        reservedSize: 40,
+                        interval: yStep,
                         getTitlesWidget: (value, meta) {
+                          const double eps = 0.01;
+                          final match = yTicks.any((t) => (value - t).abs() < eps);
+                          if (!match) return const SizedBox.shrink();
                           return Text(value.toStringAsFixed(0), style: Theme.of(context).textTheme.bodySmall);
                         },
                       ),
@@ -418,14 +427,25 @@ class TrendChart extends ConsumerWidget {
                     LineChartBarData(
                       spots: series,
                       isCurved: true,
-                      color: Theme.of(context).colorScheme.primary,
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        gradient: LinearGradient(
+                          colors: [
+                            Theme.of(context).colorScheme.primary.withValues(alpha: 0.20),
+                            Theme.of(context).colorScheme.primary.withValues(alpha: 0.00),
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                      ),
                       dotData: FlDotData(
                         show: true,
                         getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
-                          radius: 3,
+                          radius: 2,
                           color: Theme.of(context).colorScheme.primary,
-                          strokeWidth: 1.5,
-                          strokeColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                          strokeWidth: 1.0,
+                          strokeColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
                         ),
                       ),
                     ),
@@ -447,14 +467,18 @@ class TrendChart extends ConsumerWidget {
                       fitInsideHorizontally: true,
                       fitInsideVertically: true,
                       getTooltipItems: (touchedSpots) {
+                        final seen = <int>{};
                         return touchedSpots.map((t) {
                           final i = t.x.round().clamp(0, bottomLabels.length - 1);
+                          if (seen.contains(i)) {
+                            return null; // keep list size equal; null hides item
+                          }
+                          seen.add(i);
                           final dateLabel = bottomLabels[i];
                           final txtStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: Theme.of(context).colorScheme.onSurface,
                                 fontWeight: FontWeight.w600,
-                              ) ??
-                              const TextStyle(color: Colors.black);
+                              ) ?? const TextStyle(color: Colors.black);
                           return LineTooltipItem('${t.y.toStringAsFixed(1)} kg\n$dateLabel', txtStyle);
                         }).toList();
                       },

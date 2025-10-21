@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -49,6 +50,11 @@ class _LogEntryPageState extends ConsumerState<LogEntryPage> {
                 return TextField(
                   controller: _weightCtrl,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  autofocus: true,
+                  onTap: () => _weightCtrl.selection = TextSelection(baseOffset: 0, extentOffset: _weightCtrl.text.length),
+                  inputFormatters: [
+                    DecimalTextInputFormatter(decimals: 2),
+                  ],
                   decoration: InputDecoration(
                     labelText: 'Weight (kg)',
                     hintText: hint,
@@ -56,6 +62,24 @@ class _LogEntryPageState extends ConsumerState<LogEntryPage> {
                   ),
                 );
               },
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              children: [
+                for (final v in [-0.5, -0.1, 0.1, 0.5])
+                  OutlinedButton(
+                    onPressed: () {
+                      HapticFeedback.selectionClick();
+                      final raw = _weightCtrl.text.trim().replaceAll(',', '.');
+                      final current = double.tryParse(raw) ?? 0;
+                      final next = (current + v);
+                      _weightCtrl.text = next.toStringAsFixed(2);
+                      _weightCtrl.selection = TextSelection.collapsed(offset: _weightCtrl.text.length);
+                    },
+                    child: Text(v > 0 ? '+${v.toStringAsFixed(1)}' : v.toStringAsFixed(1)),
+                  ),
+              ],
             ),
             const SizedBox(height: 12),
             Row(
@@ -99,6 +123,7 @@ class _LogEntryPageState extends ConsumerState<LogEntryPage> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () async {
+                  HapticFeedback.selectionClick();
                   final messenger = ScaffoldMessenger.of(context);
                   final router = GoRouter.of(context);
                   final raw = _weightCtrl.text.trim().replaceAll(',', '.');
@@ -126,5 +151,24 @@ class _LogEntryPageState extends ConsumerState<LogEntryPage> {
         ),
       ),
     );
+  }
+}
+
+\nclass DecimalTextInputFormatter extends TextInputFormatter {
+  DecimalTextInputFormatter({this.decimals = 2});
+  final int decimals;
+  final _allowed = RegExp(r'^[0-9]*[\.,]?[0-9]*');
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    var text = newValue.text.replaceAll(',', '.');
+    final match = _allowed.stringMatch(text) ?? '';
+    final parts = match.split('.');
+    String result = match;
+    if (parts.length > 2) {
+      result = oldValue.text; // reject second separator
+    } else if (parts.length == 2 && parts[1].length > decimals) {
+      result = parts[0] + '.' + parts[1].substring(0, decimals);
+    }
+    return TextEditingValue(text: result, selection: TextSelection.collapsed(offset: result.length));
   }
 }
