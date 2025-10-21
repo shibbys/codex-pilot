@@ -63,25 +63,7 @@ class _LogEntryPageState extends ConsumerState<LogEntryPage> {
                 );
               },
             ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              children: [
-                for (final v in [-0.5, -0.1, 0.1, 0.5])
-                  OutlinedButton(
-                    onPressed: () {
-                      HapticFeedback.selectionClick();
-                      final raw = _weightCtrl.text.trim().replaceAll(',', '.');
-                      final current = double.tryParse(raw) ?? 0;
-                      final next = (current + v);
-                      _weightCtrl.text = next.toStringAsFixed(2);
-                      _weightCtrl.selection = TextSelection.collapsed(offset: _weightCtrl.text.length);
-                    },
-                    child: Text(v > 0 ? '+${v.toStringAsFixed(1)}' : v.toStringAsFixed(1)),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 12),\n            // Nudge chips moved to History/Edit screen\n
             Row(
               children: <Widget>[
                 Expanded(
@@ -176,3 +158,4 @@ class DecimalTextInputFormatter extends TextInputFormatter {
     return TextEditingValue(text: result, selection: TextSelection.collapsed(offset: result.length));
   }
 }
+

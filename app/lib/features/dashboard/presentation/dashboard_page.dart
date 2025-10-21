@@ -180,7 +180,7 @@ class DashboardPage extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.go(LogEntryPage.routePath),
+        onPressed: () => context.push(LogEntryPage.routePath),
         tooltip: tr(ref, 'logWeight'),
         child: const Icon(Icons.add),
       ),

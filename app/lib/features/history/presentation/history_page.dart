@@ -45,7 +45,7 @@ class HistoryPage extends ConsumerWidget {
                   final yr = DateFormat('yy', locale.languageCode).format(d);
                   final dateStr = '$day/$mon/$yr';
                   return ListTile(
-                    leading: const Icon(Icons.monitor_weight_outlined),
+                    leading: const Icon(Icons.monitor_weight),
                     title: Text('${(e.weightKg as double).toStringAsFixed(1)} kg'),
                     subtitle: Text(dateStr + (e.note == null ? '' : '  •  ${e.note as String}')),
                     trailing: const Icon(Icons.chevron_right),

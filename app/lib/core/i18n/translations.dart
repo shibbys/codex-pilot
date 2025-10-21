@@ -152,3 +152,4 @@ String tr(WidgetRef ref, String key) {
   final locale = ref.watch(i18nControllerProvider).value ?? const Locale('en');
   return _translations[locale.languageCode]?[key] ?? key;
 }
+

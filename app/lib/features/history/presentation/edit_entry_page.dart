@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 
 import '../../../data/local/app_database.dart';
 
@@ -152,5 +153,24 @@ class _EditEntryPageState extends ConsumerState<EditEntryPage> {
         ),
       ),
     );
+  }
+}
+
+class DecimalTextInputFormatter extends TextInputFormatter {
+  DecimalTextInputFormatter({this.decimals = 2});
+  final int decimals;
+  final _allowed = RegExp(r'^[0-9]*[\.,]?[0-9]*');
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    var text = newValue.text.replaceAll(',', '.');
+    final match = _allowed.stringMatch(text) ?? '';
+    final parts = match.split('.');
+    String result = match;
+    if (parts.length > 2) {
+      result = oldValue.text; // reject second separator
+    } else if (parts.length == 2 && parts[1].length > decimals) {
+      result = '${parts[0]}.${parts[1].substring(0, decimals)}';
+    }
+    return TextEditingValue(text: result, selection: TextSelection.collapsed(offset: result.length));
   }
 }
