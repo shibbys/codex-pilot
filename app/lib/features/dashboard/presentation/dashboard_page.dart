@@ -193,6 +193,7 @@ class TrendChart extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final entriesAsync = ref.watch(chartEntriesProvider);
     final goalObj = ref.watch(currentGoalProvider).value;
+    final locale = ref.watch(i18nControllerProvider).valueOrNull ?? const Locale('en');
     final double? goalWeight = () {
       try {
         if (goalObj == null) return null;
@@ -504,14 +505,13 @@ class TrendChart extends ConsumerWidget {
                           ],
                         ),
                         const SizedBox(height: 6),
-                        if (etaDays != null)
-                          Row(
+                        if (etaDays != null) (() { final int etaD = etaDays!.round(); return Row(
                             children: [
                               const Icon(Icons.schedule, size: 16),
                               const SizedBox(width: 8),
                               Builder(builder: (_) {
                                 final now = DateTime.now();
-                                final etaDate = DateTime(now.year, now.month, now.day).add(Duration(days: etaDays!.round()));
+                                final etaDate = DateTime(now.year, now.month, now.day).add(Duration(days: etaD));
                                 final dd = DateFormat('dd', locale.languageCode).format(etaDate);
                                 var mon = DateFormat('MMM', locale.languageCode)
                                     .format(etaDate)
@@ -520,7 +520,7 @@ class TrendChart extends ConsumerWidget {
                                 final yy = DateFormat('yy', locale.languageCode).format(etaDate);
                                 final etaStr = '$dd/$mon/$yy';
                                 return Text(
-                                  '${tr(ref, 'eta')} ~ ${etaDays!.round()}${tr(ref, 'daysShort')} (${tr(ref, 'byApprox')} $etaStr)',
+                                  '${tr(ref, 'eta')} ~ \${etaD}${tr(ref, 'daysShort')} (${tr(ref, 'byApprox')} $etaStr)',
                                   style: theme.textTheme.bodyMedium,
                                 );
                               }),
@@ -687,6 +687,7 @@ class _SummaryCard extends StatelessWidget {
     );
   }
 }
+
 
 
 
