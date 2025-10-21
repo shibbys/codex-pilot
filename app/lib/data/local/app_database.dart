@@ -20,7 +20,25 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) async {
+          await m.createAll();
+          await customStatement(
+              'CREATE UNIQUE INDEX IF NOT EXISTS idx_weight_entries_single_day ON weight_entries(entry_date)');
+        },
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            // Deduplicate any rows sharing the same entry_date, keep smallest id
+            await customStatement(
+                'DELETE FROM weight_entries WHERE id NOT IN (SELECT MIN(id) FROM weight_entries GROUP BY entry_date)');
+            await customStatement(
+                'CREATE UNIQUE INDEX IF NOT EXISTS idx_weight_entries_single_day ON weight_entries(entry_date)');
+          }
+        },
+      );
 
   // Weight entries API
   Future<int> addWeightEntry({
@@ -28,13 +46,48 @@ class AppDatabase extends _$AppDatabase {
     required double weightKg,
     String? note,
   }) {
+    // Normalize date to midnight to enforce single entry per day
+    final normalized = DateTime(date.year, date.month, date.day);
     return into(weightEntries).insert(
       WeightEntriesCompanion.insert(
-        entryDate: date,
+        entryDate: normalized,
         weightKg: weightKg,
         note: Value(note),
       ),
+      mode: InsertMode.insertOrReplace,
     );
+  }
+
+  Future<void> updateWeightEntry({
+    required int id,
+    required DateTime date,
+    required double weightKg,
+    String? note,
+  }) async {
+    final normalized = DateTime(date.year, date.month, date.day);
+    // If another row exists for the same day, remove it (keep the edited one)
+    final conflict = await (select(weightEntries)
+          ..where((t) => t.entryDate.equals(normalized) & t.id.isNotIn([id])))
+        .getSingleOrNull();
+    if (conflict != null) {
+      await (delete(weightEntries)..where((t) => t.id.equals(conflict.id))).go();
+    }
+    await (update(weightEntries)..where((t) => t.id.equals(id))).write(
+      WeightEntriesCompanion(
+        entryDate: Value(normalized),
+        weightKg: Value(weightKg),
+        note: Value(note),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  Future<void> deleteWeightEntry(int id) async {
+    await (delete(weightEntries)..where((t) => t.id.equals(id))).go();
+  }
+
+  Future<int> clearAllEntries() async {
+    return await (delete(weightEntries)).go();
   }
 
   Stream<dynamic> watchLatestEntry() {

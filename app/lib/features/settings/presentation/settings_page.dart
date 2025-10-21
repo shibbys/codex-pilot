@@ -7,6 +7,8 @@ import '../../../core/theme/theme_controller.dart';
 import '../../../core/i18n/translations.dart';
 import '../../log_entry/services/reminder_service.dart';
 import '../../../data/local/app_database.dart';
+import '../../../data/sync/csv_service.dart';
+import 'package:share_plus/share_plus.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -20,6 +22,37 @@ class SettingsPage extends ConsumerStatefulWidget {
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   TimeOfDay _time = const TimeOfDay(hour: 8, minute: 0);
+  bool _reminderSet = false;
+  Future<void> _refreshReminderStatus() async {
+    final svc = ref.read(reminderServiceProvider);
+    final scheduled = await svc.isReminderScheduled(100);
+    if (mounted) setState(() => _reminderSet = scheduled);
+  }
+
+  Future<String?> _askFirstName(BuildContext context) async {
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Export CSV'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              labelText: 'First name for file name',
+              hintText: 'e.g., Marlon',
+            ),
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(null), child: const Text('Cancel')),
+            ElevatedButton(onPressed: () => Navigator.of(ctx).pop(controller.text.trim()), child: const Text('Export')),
+          ],
+        );
+      },
+    );
+    return result == null || result.isEmpty ? null : result;
+  }
 
   @override
   void initState() {
@@ -29,6 +62,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       if (saved != null && mounted) {
         setState(() => _time = TimeOfDay(hour: saved.hour, minute: saved.minute));
       }
+      if (mounted) {
+        setState(() => _reminderSet = saved != null);
+      }
+      await _refreshReminderStatus();
     });
   }
 
@@ -110,6 +147,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     leading: const Icon(Icons.schedule),
                     title: Text(tr(ref, 'dailyReminderTime')),
                     subtitle: Text(_time.format(context)),
+                    trailing: Icon(
+                      _reminderSet ? Icons.check_circle : Icons.cancel,
+                      color: _reminderSet ? Colors.green : Colors.grey,
+                    ),
                     onTap: () async {
                       final picked = await showTimePicker(
                         context: context,
@@ -131,6 +172,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                                 hour: t.hour,
                                 minute: t.minute,
                               );
+                          await _refreshReminderStatus();
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text('${tr(ref, 'scheduledAt')} ${t.format(context)}')),
@@ -144,6 +186,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       OutlinedButton.icon(
                         onPressed: () async {
                           await ref.read(reminderServiceProvider).cancelReminder(100);
+                          await _refreshReminderStatus();
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Reminder canceled')),
@@ -163,11 +206,75 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 leading: const Icon(Icons.table_view),
                 title: Text(tr(ref, 'exportCsv')),
                 subtitle: Text(tr(ref, 'exportCsvSubtitle')),
+                onTap: () async {
+                  final name = await _askFirstName(context) ?? 'User';
+                  final file = await ref.read(csvServiceProvider).exportEntries(userFirstName: name);
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Exported to ${file.path}')),
+                  );
+                },
               ),
               ListTile(
-                leading: const Icon(Icons.cloud_upload),
-                title: Text(tr(ref, 'googleDriveSync')),
-                subtitle: Text(tr(ref, 'googleDriveSyncSubtitle')),
+                leading: const Icon(Icons.share),
+                title: Text(tr(ref, 'shareCsv')),
+                subtitle: Text(tr(ref, 'shareCsvSubtitle')),
+                onTap: () async {
+                  final name = await _askFirstName(context) ?? 'User';
+                  final file = await ref.read(csvServiceProvider).exportEntries(userFirstName: name);
+                  await Share.shareXFiles([XFile(file.path)], text: 'Daily Weight Tracker data');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.file_open),
+                title: Text(tr(ref, 'importCsv')),
+                subtitle: Text(tr(ref, 'importCsvSubtitle')),
+                onTap: () async {
+                  final choice = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Delete all logs before import?'),
+                      content: const Text('You can clear all existing entries before importing the CSV.'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('No')),
+                        ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Yes')),
+                      ],
+                    ),
+                  );
+                  if (choice == true) {
+                    await ref.read(appDatabaseProvider).clearAllEntries();
+                  }
+                  final count = await ref.read(csvServiceProvider).pickAndImport();
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Imported $count entr${count == 1 ? 'y' : 'ies'}')),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_sweep, color: Colors.redAccent),
+                title: Text(tr(ref, 'clearAllLogs')),
+                subtitle: Text(tr(ref, 'clearAllLogsSubtitle')),
+                onTap: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: Text(tr(ref, 'clearAllLogs')),
+                      content: Text(tr(ref, 'clearAllLogsSubtitle')),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+                        ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Delete')),
+                      ],
+                    ),
+                  );
+                  if (confirm == true) {
+                    await ref.read(appDatabaseProvider).clearAllEntries();
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('All logs cleared')),
+                    );
+                  }
+                },
               ),
               const SizedBox(height: 24),
               Text(tr(ref, 'goal'), style: Theme.of(context).textTheme.titleLarge),

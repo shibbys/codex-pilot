@@ -50,24 +50,52 @@ class ReminderService {
 
     debugPrint('Scheduling reminder id=$id at ${scheduled.toLocal()}');
 
-    await _plugin.zonedSchedule(
-      id,
-      'Weight Log Reminder',
-      "Don't forget to record today's weight.",
-      scheduled,
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'daily_weight',
-          'Daily Weight Reminder',
-          channelDescription: 'Daily reminder to log weight',
-          importance: Importance.defaultImportance,
-          priority: Priority.defaultPriority,
+    // Try exact first; if not permitted, fall back to inexact scheduling.
+    try {
+      await _plugin.zonedSchedule(
+        id,
+        'Weight Log Reminder',
+        "Don't forget to record today's weight.",
+        scheduled,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'daily_weight',
+            'Daily Weight Reminder',
+            channelDescription: 'Daily reminder to log weight',
+            importance: Importance.defaultImportance,
+            priority: Priority.defaultPriority,
+          ),
         ),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time,
-    );
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+    } on Exception catch (e) {
+      debugPrint('Exact schedule failed ($e). Falling back to inexact.');
+      // Best-effort: request exact alarm permission if supported (no-op on older plugin/OS)
+      try {
+        final androidImpl = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+        await androidImpl?.requestExactAlarmsPermission();
+      } catch (_) {}
+      await _plugin.zonedSchedule(
+        id,
+        'Weight Log Reminder',
+        "Don't forget to record today's weight.",
+        scheduled,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'daily_weight',
+            'Daily Weight Reminder',
+            channelDescription: 'Daily reminder to log weight',
+            importance: Importance.defaultImportance,
+            priority: Priority.defaultPriority,
+          ),
+        ),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+    }
 
     // Persist selection
     final prefs = await SharedPreferences.getInstance();
@@ -81,6 +109,11 @@ class ReminderService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_hourKey);
     await prefs.remove(_minuteKey);
+  }
+
+  Future<bool> isReminderScheduled(int id) async {
+    final pending = await _plugin.pendingNotificationRequests();
+    return pending.any((n) => n.id == id);
   }
 
   Future<({int hour, int minute})?> loadSavedReminderTime() async {

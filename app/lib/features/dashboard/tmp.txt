@@ -177,17 +177,9 @@ class DashboardPage extends ConsumerWidget {
 }
 
 class TrendChart extends ConsumerWidget {
-  const TrendChart({
-    required this.days,
-    required this.byDays,
-    this.showMetrics = true,
-    this.expandChart = false,
-    super.key,
-  });
+  const TrendChart({required this.days, required this.byDays, super.key});
   final int days;
   final bool byDays;
-  final bool showMetrics;
-  final bool expandChart;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -202,7 +194,10 @@ class TrendChart extends ConsumerWidget {
       }
     }();
 
-    final content = entriesAsync.when(
+    return Card(
+      child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: entriesAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, st) => Center(child: Text('$e')),
             data: (items) {
@@ -214,50 +209,30 @@ class TrendChart extends ConsumerWidget {
               List<FlSpot> series = [];
               final List<DateTime> xDates = [];
               if (!byDays) {
-                // Entries mode: take latest N entries, then sort ascending by date for left->right chronology
-                final recent = list.take(days).toList();
-                recent.sort((a, b) => ((a as dynamic).entryDate as DateTime)
-                    .compareTo(((b as dynamic).entryDate as DateTime)));
+                final recent = list.take(days).toList().reversed.toList();
                 for (int i = 0; i < recent.length; i++) {
                   final w = (recent[i] as dynamic).weightKg as double;
                   series.add(FlSpot(i.toDouble(), w));
                   xDates.add((recent[i] as dynamic).entryDate as DateTime);
                 }
               } else {
-                // Anchor the window to the latest entry date so imported historical
-                // datasets render a full range even if there are no recent entries.
-                DateTime latest = DateTime.now();
-                try {
-                  for (final e in list) {
-                    final d = (e as dynamic).entryDate as DateTime;
-                    if (d.isAfter(latest)) latest = d;
-                  }
-                } catch (_) {}
-                final base = DateTime(latest.year, latest.month, latest.day);
-                final start = base.subtract(Duration(days: days - 1));
+                final now = DateTime.now();
+                final start = DateTime(now.year, now.month, now.day).subtract(Duration(days: days - 1));
                 final map = <DateTime, double?>{};
                 for (int i = 0; i < days; i++) {
                   final d = DateTime(start.year, start.month, start.day).add(Duration(days: i));
                   map[d] = null;
                 }
-                // Use the latest entry per day; ensure we iterate ascending so later entries overwrite earlier ones during fill-forward
-                final sorted = List<dynamic>.from(list)
-                  ..sort((a, b) => ((a as dynamic).entryDate as DateTime)
-                      .compareTo(((b as dynamic).entryDate as DateTime)));
-                for (final e in sorted) {
+                for (final e in list) {
                   final d = (e as dynamic).entryDate as DateTime;
                   final key = DateTime(d.year, d.month, d.day);
-                  if (map.containsKey(key)) {
+                  if (map.containsKey(key) && map[key] == null) {
                     map[key] = e.weightKg as double;
                   }
                 }
                 int idx = 0;
-                double? last;
                 for (final v in map.values) {
-                  if (v != null) last = v;
-                  if (last != null) {
-                    series.add(FlSpot(idx.toDouble(), last));
-                  }
+                  if (v != null) series.add(FlSpot(idx.toDouble(), v));
                   xDates.add(DateTime(start.year, start.month, start.day).add(Duration(days: idx)));
                   idx++;
                 }
@@ -291,21 +266,6 @@ class TrendChart extends ConsumerWidget {
                 final mm = d.month.toString().padLeft(2, '0');
                 return '$dd/$mm';
               });
-
-              // Show exactly 7 evenly spaced labels when possible (including first & last)
-              // If there are fewer than 7 points, show all of them.
-              final int desiredLabelCount = 7;
-              final Set<int> labelIndices = <int>{};
-              if (bottomLabels.length <= desiredLabelCount) {
-                for (int i = 0; i < bottomLabels.length; i++) {
-                  labelIndices.add(i);
-                }
-              } else {
-                for (int k = 0; k < desiredLabelCount; k++) {
-                  final double pos = k * (bottomLabels.length - 1) / (desiredLabelCount - 1);
-                  labelIndices.add(pos.round());
-                }
-              }
 
               // Compute y-bounds with padding
               double minY = series.first.y;
@@ -348,14 +308,21 @@ class TrendChart extends ConsumerWidget {
                         getTitlesWidget: (value, meta) {
                           final i = value.round();
                           if (i < 0 || i >= bottomLabels.length) return const SizedBox.shrink();
-                          if (!labelIndices.contains(i)) return const SizedBox.shrink();
+                          final maxLabels = 6;
+                          final step = (bottomLabels.length / maxLabels).ceil().clamp(1, 9999);
+                          if (i % step != 0 && i != bottomLabels.length - 1) {
+                            return const SizedBox.shrink();
+                          }
+                          final rotate = bottomLabels.length > 10;
                           final label = Text(
                             bottomLabels[i],
                             style: Theme.of(context).textTheme.bodySmall,
                           );
                           return Padding(
                             padding: const EdgeInsets.only(top: 4),
-                            child: Transform.rotate(angle: -math.pi / 4, child: label),
+                            child: rotate
+                                ? Transform.rotate(angle: -math.pi / 4, child: label)
+                                : label,
                           );
                         },
                       ),
@@ -405,272 +372,9 @@ class TrendChart extends ConsumerWidget {
                                 fontWeight: FontWeight.w600,
                               ) ??
                               const TextStyle(color: Colors.black);
-                          return LineTooltipItem('${t.y.toStringAsFixed(1)} kg\n$dateLabel', txtStyle);
+                          return LineTooltipItem('${t.y.toStringAsFixed(1)} kg`n$dateLabel', txtStyle);
                         }).toList();
                       },
                     ),
                   ),
                   extraLinesData: ExtraLinesData(
-                    horizontalLines: [
-                      if (goalWeight != null)
-                        HorizontalLine(
-                          y: goalWeight,
-                          color: Colors.redAccent,
-                          strokeWidth: 1.5,
-                          dashArray: [6, 4],
-                        ),
-                    ],
-                  ),
-                ),
-              );
-
-              // Goal distance and ETA / needed per day card
-              Widget metricsCard() {
-                double? goal = goalWeight;
-                final theme = Theme.of(context);
-                if (goal == null) return const SizedBox.shrink();
-                final last = series.last.y;
-                final delta = goal - last; // + need to gain, - need to lose
-
-                // Trend slope per x-unit
-                double? slope;
-                {
-                  final n = series.length;
-                  final sumX = series.fold<double>(0, (s, p) => s + p.x);
-                  final sumY = series.fold<double>(0, (s, p) => s + p.y);
-                  final sumXX = series.fold<double>(0, (s, p) => s + p.x * p.x);
-                  final sumXY = series.fold<double>(0, (s, p) => s + p.x * p.y);
-                  final denom2 = (n * sumXX - sumX * sumX);
-                  if (denom2 != 0) {
-                    slope = (n * sumXY - sumX * sumY) / denom2;
-                  }
-                }
-
-                double? etaDays;
-                if (slope != null && slope != 0) {
-                  double stepDays = 1;
-                  if (!byDays && xDates.length >= 2) {
-                    final totalDays = (xDates.last.difference(xDates.first).inDays).abs();
-                    if (totalDays > 0) {
-                      stepDays = totalDays / (xDates.length - 1);
-                    }
-                  }
-                  final estSteps = delta / slope;
-                  final estDays = estSteps * stepDays;
-                  if (estDays >= 0) etaDays = estDays;
-                }
-
-                // Needed per day if goal has a deadline (from DB goal targetDate)
-                double? neededPerDay;
-                DateTime? deadline;
-                try {
-                  // Find a target date from current goal provider
-                  final g = ref.read(currentGoalProvider).value;
-                  if (g != null) {
-                    deadline = (g as dynamic).targetDate as DateTime?;
-                  }
-                } catch (_) {}
-                if (deadline != null) {
-                  final now = DateTime.now();
-                  final remaining = deadline.difference(DateTime(now.year, now.month, now.day)).inDays;
-                  if (remaining > 0) {
-                    neededPerDay = delta / remaining;
-                  }
-                }
-
-                return Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              delta >= 0 ? Icons.north_east : Icons.south_east,
-                              size: 16,
-                              color: theme.colorScheme.onSurface,
-                            ),
-                            const SizedBox(width: 8),
-                            Text('${delta.abs().toStringAsFixed(1)} kg ${tr(ref, 'toGoal')}', style: theme.textTheme.bodyMedium),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            const Icon(Icons.trending_up, size: 16),
-                            const SizedBox(width: 8),
-                            Text('${tr(ref, 'trend')}: ${(slope ?? 0).toStringAsFixed(2)} kg/${tr(ref, 'daysShort')}', style: theme.textTheme.bodyMedium),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        if (etaDays != null)
-                          Row(
-                            children: [
-                              const Icon(Icons.schedule, size: 16),
-                              const SizedBox(width: 8),
-                              Text('${tr(ref, 'eta')} ~ ${etaDays.round()}${tr(ref, 'daysShort')}', style: theme.textTheme.bodyMedium),
-                            ],
-                          )
-                        else if (slope != null && slope == 0)
-                          Text(tr(ref, 'movingAway'), style: theme.textTheme.bodyMedium)
-                        else
-                          const SizedBox.shrink(),
-                        if (neededPerDay != null) ...[
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              const Icon(Icons.speed, size: 16),
-                              const SizedBox(width: 8),
-                              Text('${tr(ref, 'average')}: ${neededPerDay.toStringAsFixed(2)} kg/${tr(ref, 'daysShort')}', style: theme.textTheme.bodyMedium),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                );
-              }
-
-              // Two modes:
-              // - Default: compact card with fixed-height chart + metrics below.
-              // - Fullscreen: expand chart to fill available space and hide metrics to avoid overflow.
-              if (expandChart) {
-                return SizedBox.expand(child: chart);
-              } else {
-                return Column(
-                  children: [
-                    SizedBox(height: 160, child: chart),
-                    if (showMetrics) ...[
-                      const SizedBox(height: 8),
-                      metricsCard(),
-                    ],
-                  ],
-                );
-              }
-            },
-          );
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: expandChart
-            // Ensure the chart can grow to fill in fullscreen
-            ? LayoutBuilder(
-                builder: (context, constraints) {
-                  return ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight,
-                      minWidth: constraints.maxWidth,
-                    ),
-                    child: content,
-                  );
-                },
-              )
-            : content,
-      ),
-    );
-  }
-}
-
-class FullscreenChartPage extends ConsumerStatefulWidget {
-  const FullscreenChartPage({required this.days, required this.byDays, super.key});
-  final int days;
-  final bool byDays;
-
-  @override
-  ConsumerState<FullscreenChartPage> createState() => _FullscreenChartPageState();
-}
-
-class _FullscreenChartPageState extends ConsumerState<FullscreenChartPage> {
-  late int _days;
-  late bool _byDays;
-
-  @override
-  void initState() {
-    super.initState();
-    _days = widget.days;
-    _byDays = widget.byDays;
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
-  }
-
-  @override
-  void dispose() {
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(tr(ref, 'fullscreen'))),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  ChoiceChip(label: const Text('7'), selected: _days == 7, onSelected: (_) => setState(() => _days = 7)),
-                  const SizedBox(width: 8),
-                  ChoiceChip(label: const Text('15'), selected: _days == 15, onSelected: (_) => setState(() => _days = 15)),
-                  const SizedBox(width: 8),
-                  ChoiceChip(label: const Text('30'), selected: _days == 30, onSelected: (_) => setState(() => _days = 30)),
-                  const Spacer(),
-                  FilterChip(
-                    label: Text(_byDays ? tr(ref, 'days') : tr(ref, 'entries')),
-                    selected: _byDays,
-                    onSelected: (v) => setState(() => _byDays = v),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Expanded(
-                child: TrendChart(
-                  days: _days,
-                  byDays: _byDays,
-                  showMetrics: false,
-                  expandChart: true,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({required this.title, required this.value});
-
-  final String title;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontSize: 22),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
