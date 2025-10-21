@@ -457,7 +457,7 @@ class TrendChart extends ConsumerWidget {
                   }
                   final estSteps = delta / slope;
                   final estDays = estSteps * stepDays;
-                  if (estDays >= 0) etaDays = estDays;
+                  if (estDays >= 0) { etaDays = estDays; }
                 }
 
                 // Needed per day if goal has a deadline (from DB goal targetDate)
@@ -509,10 +509,24 @@ class TrendChart extends ConsumerWidget {
                             children: [
                               const Icon(Icons.schedule, size: 16),
                               const SizedBox(width: 8),
-                              Text('${tr(ref, 'eta')} ~ ${etaDays.round()}${tr(ref, 'daysShort')}', style: theme.textTheme.bodyMedium),
+                              Builder(builder: (_) {
+                                final now = DateTime.now();
+                                final etaDate = DateTime(now.year, now.month, now.day).add(Duration(days: etaDays!.round()));
+                                final dd = DateFormat('dd', locale.languageCode).format(etaDate);
+                                var mon = DateFormat('MMM', locale.languageCode)
+                                    .format(etaDate)
+                                    .replaceAll('.', '')
+                                    .toLowerCase();
+                                final yy = DateFormat('yy', locale.languageCode).format(etaDate);
+                                final etaStr = '$dd/$mon/$yy';
+                                return Text(
+                                  '${tr(ref, 'eta')} ~ ${etaDays!.round()}${tr(ref, 'daysShort')} (${tr(ref, 'byApprox')} $etaStr)',
+                                  style: theme.textTheme.bodyMedium,
+                                );
+                              }),
                             ],
                           )
-                        else if (slope != null && slope == 0)
+                        else if (slope != null && slope != 0)
                           Text(tr(ref, 'movingAway'), style: theme.textTheme.bodyMedium)
                         else
                           const SizedBox.shrink(),
@@ -673,4 +687,6 @@ class _SummaryCard extends StatelessWidget {
     );
   }
 }
+
+
 

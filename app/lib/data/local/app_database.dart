@@ -87,7 +87,9 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<int> clearAllEntries() async {
-    return await (delete(weightEntries)).go();
+    final deleted = await (delete(weightEntries)).go();
+    await (delete(goals)).go();
+    return deleted;
   }
 
   Stream<dynamic> watchLatestEntry() {
