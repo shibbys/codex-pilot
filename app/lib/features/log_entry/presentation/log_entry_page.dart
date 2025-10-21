@@ -63,7 +63,8 @@ class _LogEntryPageState extends ConsumerState<LogEntryPage> {
                 );
               },
             ),
-            const SizedBox(height: 12),\n            // Nudge chips moved to History/Edit screen\n
+            const SizedBox(height: 12),
+            // Nudge chips moved to History/Edit screen
             Row(
               children: <Widget>[
                 Expanded(
@@ -158,5 +159,7 @@ class DecimalTextInputFormatter extends TextInputFormatter {
     return TextEditingValue(text: result, selection: TextSelection.collapsed(offset: result.length));
   }
 }
+
+
 
 
