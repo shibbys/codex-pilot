@@ -7,6 +7,7 @@ import '../../../core/theme/theme_controller.dart';
 import '../../../core/i18n/translations.dart';
 import '../../log_entry/services/reminder_service.dart';
 import '../../../data/local/app_database.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../../../data/sync/csv_service.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -114,7 +115,54 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         ),
                       ),
                     )
-                    .toList(),
+                    .toList()
+                  ..add(
+                    GestureDetector(
+                      onTap: () async {
+                        final current = ref.read(themeControllerProvider).valueOrNull?.seedColor ?? kPresetAccentColors.first;
+                        Color temp = current;
+                        final ok = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) {
+                            return AlertDialog(
+                              title: Text(tr(ref, 'customColor')),
+                              content: SingleChildScrollView(
+                                child: BlockPicker(
+                                  pickerColor: temp,
+                                  onColorChanged: (c) => temp = c,
+                                ),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.of(ctx).pop(false),
+                                  child: Text(tr(ref, 'cancel')),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    ref.read(themeControllerProvider.notifier).updateSeedColor(kPresetAccentColors.first);
+                                    Navigator.of(ctx).pop(false);
+                                  },
+                                  child: Text(tr(ref, 'reset')),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.of(ctx).pop(true),
+                                  child: Text(tr(ref, 'done')),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                        if (ok == true) {
+                          await ref.read(themeControllerProvider.notifier).updateSeedColor(temp);
+                        }
+                      },
+                      child: CircleAvatar(
+                        radius: 24,
+                        backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+                        child: const Icon(Icons.color_lens, color: Colors.white),
+                      ),
+                    ),
+                  ),
               ),
               const SizedBox(height: 24),
               Text(tr(ref, 'language'), style: Theme.of(context).textTheme.titleLarge),

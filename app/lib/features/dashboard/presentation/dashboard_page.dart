@@ -135,10 +135,46 @@ class DashboardPage extends ConsumerWidget {
                   label: Icon(ref.watch(chartByDaysProvider) ? Icons.calendar_today : Icons.view_list),
                   selected: ref.watch(chartByDaysProvider),
                   onSelected: (v) => ref.read(chartByDaysProvider.notifier).state = v,
+                  showCheckmark: false,
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 8),
+          Builder(builder: (ctx) {
+            final isDays = ref.watch(chartByDaysProvider);
+            final d = ref.watch(chartDaysProvider);
+            final loc = ref.watch(i18nControllerProvider).valueOrNull ?? const Locale('en');
+            String title;
+            if (d == 0) {
+              title = loc.languageCode == 'pt'
+                  ? (isDays ? 'Todos os dias' : 'Todos os registros')
+                  : (isDays ? 'All days' : 'All logs');
+            } else {
+              title = loc.languageCode == 'pt'
+                  ? '$d últimos ' + (isDays ? 'dias' : 'registros')
+                  : 'Last $d ' + (isDays ? 'days' : 'logs');
+            }
+            return Row(
+              children: [
+                Text(title, style: Theme.of(ctx).textTheme.titleMedium),
+                const Spacer(),
+                IconButton(
+                  tooltip: tr(ref, 'fullscreen'),
+                  icon: const Icon(Icons.fullscreen),
+                  onPressed: () async {
+                    final days = ref.read(chartDaysProvider);
+                    final byDays = ref.read(chartByDaysProvider);
+                    await Navigator.of(ctx).push(
+                      MaterialPageRoute(
+                        builder: (_) => FullscreenChartPage(days: days, byDays: byDays),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            );
+          }),
           const SizedBox(height: 8),
           TrendChart(days: ref.watch(chartDaysProvider), byDays: ref.watch(chartByDaysProvider)),
         ],
@@ -562,31 +598,7 @@ class TrendChart extends ConsumerWidget {
               } else {
                 return Column(
                   children: [
-                    SizedBox(
-                      height: 160,
-                      child: Stack(
-                        children: [
-                          Positioned.fill(child: chart),
-                          Positioned(
-                            bottom: 6,
-                            right: 6,
-                            child: IconButton(
-                              tooltip: tr(ref, 'fullscreen'),
-                              icon: const Icon(Icons.fullscreen),
-                              onPressed: () async {
-                                final days = ref.read(chartDaysProvider);
-                                final byDays = ref.read(chartByDaysProvider);
-                                await Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => FullscreenChartPage(days: days, byDays: byDays),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    SizedBox(height: 160, child: chart),
                     if (showMetrics) ...[
                       const SizedBox(height: 8),
                       metricsCard(),
@@ -677,6 +689,7 @@ class _FullscreenChartPageState extends ConsumerState<FullscreenChartPage> {
                       label: Icon(_byDays ? Icons.calendar_today : Icons.view_list),
                       selected: _byDays,
                       onSelected: (v) => setState(() => _byDays = v),
+                      showCheckmark: false,
                     ),
                   ),
                 ],

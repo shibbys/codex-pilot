@@ -33,7 +33,7 @@ class HistoryPage extends ConsumerWidget {
               return ListView.separated(
                 padding: const EdgeInsets.all(16),
                 itemCount: list.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (ctx, __) => Divider(height: 1, color: Theme.of(ctx).dividerColor.withOpacity(0.08)),
                 itemBuilder: (context, index) {
                   final e = list[index] as dynamic;
                   final d = e.entryDate as DateTime;
@@ -48,27 +48,7 @@ class HistoryPage extends ConsumerWidget {
                     leading: const Icon(Icons.monitor_weight),
                     title: Text('${(e.weightKg as double).toStringAsFixed(1)} kg'),
                     subtitle: Text(dateStr + (e.note == null ? '' : '  •  ${e.note as String}')),
-                    trailing: IconButton(
-                      tooltip: 'Edit',
-                      icon: const Icon(Icons.edit_outlined),
-                      onPressed: () async {
-                        final changed = await Navigator.of(context).push<bool>(
-                          MaterialPageRoute(
-                            builder: (_) => EditEntryPage(
-                              id: (e.id as int),
-                              initialDate: d,
-                              initialWeight: (e.weightKg as double),
-                              initialNote: e.note as String?,
-                            ),
-                          ),
-                        );
-                        if (changed == true && context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Entry updated')),
-                          );
-                        }
-                      },
-                    ),
+                    trailing: const Icon(Icons.chevron_right),
                     onTap: () async {
                       final changed = await Navigator.of(context).push<bool>(
                         MaterialPageRoute(

@@ -62,6 +62,10 @@ final _translations = <String, Map<String, String>>{
     'movingAway': 'moving away',
     'noDeadline': 'no deadline',
     'fullscreen': 'Full screen',
+    'customColor': 'Custom Color',
+    'reset': 'Reset',
+    'done': 'Done',
+    'cancel': 'Cancel',
   },
   'pt': {
     'appTitle': 'Pesândinho',
@@ -120,6 +124,10 @@ final _translations = <String, Map<String, String>>{
     'movingAway': 'afastando da meta',
     'noDeadline': 'sem prazo',
     'fullscreen': 'Tela cheia',
+    'customColor': 'Personalizado',
+    'reset': 'Resetar',
+    'done': 'Feito',
+    'cancel': 'Cancelar',
   },
 };
 
