@@ -136,7 +136,11 @@ class _LogEntryPageState extends ConsumerState<LogEntryPage> {
                   }
 
                   final db = ref.read(appDatabaseProvider);
-                  await db.addWeightEntry(date: _date, weightKg: weight, note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim());
+                  await db.addWeightEntry(
+                    date: _date,
+                    weightKg: weight,
+                    note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
+                  );
 
                   messenger.showSnackBar(
                     const SnackBar(content: Text('Weight saved')),
@@ -154,7 +158,7 @@ class _LogEntryPageState extends ConsumerState<LogEntryPage> {
   }
 }
 
-\nclass DecimalTextInputFormatter extends TextInputFormatter {
+class DecimalTextInputFormatter extends TextInputFormatter {
   DecimalTextInputFormatter({this.decimals = 2});
   final int decimals;
   final _allowed = RegExp(r'^[0-9]*[\.,]?[0-9]*');
@@ -167,7 +171,7 @@ class _LogEntryPageState extends ConsumerState<LogEntryPage> {
     if (parts.length > 2) {
       result = oldValue.text; // reject second separator
     } else if (parts.length == 2 && parts[1].length > decimals) {
-      result = parts[0] + '.' + parts[1].substring(0, decimals);
+      result = '${parts[0]}.${parts[1].substring(0, decimals)}';
     }
     return TextEditingValue(text: result, selection: TextSelection.collapsed(offset: result.length));
   }

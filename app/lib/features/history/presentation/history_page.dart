@@ -33,7 +33,7 @@ class HistoryPage extends ConsumerWidget {
               return ListView.separated(
                 padding: const EdgeInsets.all(16),
                 itemCount: list.length,
-                separatorBuilder: (ctx, __) => Divider(height: 1, color: Theme.of(ctx).dividerColor.withOpacity(0.08)),
+                separatorBuilder: (ctx, __) => Divider(height: 1, color: Theme.of(ctx).dividerColor.withValues(alpha: 0.08)),
                 itemBuilder: (context, index) {
                   final e = list[index] as dynamic;
                   final d = e.entryDate as DateTime;

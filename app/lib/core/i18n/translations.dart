@@ -65,7 +65,6 @@ final _translations = <String, Map<String, String>>{
     'customColor': 'Custom Color',
     'reset': 'Reset',
     'done': 'Done',
-    'cancel': 'Cancel',
   },
   'pt': {
     'appTitle': 'Pesândinho',
@@ -127,7 +126,6 @@ final _translations = <String, Map<String, String>>{
     'customColor': 'Personalizado',
     'reset': 'Resetar',
     'done': 'Feito',
-    'cancel': 'Cancelar',
   },
 };
 

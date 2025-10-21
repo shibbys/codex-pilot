@@ -152,8 +152,8 @@ class DashboardPage extends ConsumerWidget {
                   : (isDays ? 'All days' : 'All logs');
             } else {
               title = loc.languageCode == 'pt'
-                  ? '$d últimos ' + (isDays ? 'dias' : 'registros')
-                  : 'Last $d ' + (isDays ? 'days' : 'logs');
+                  ? '$d últimos ${isDays ? 'dias' : 'registros'}'
+                  : 'Last $d ${isDays ? 'days' : 'logs'}';
             }
             return Row(
               children: [
