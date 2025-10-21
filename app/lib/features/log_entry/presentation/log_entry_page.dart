@@ -36,14 +36,26 @@ class _LogEntryPageState extends ConsumerState<LogEntryPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            TextField(
-              controller: _weightCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Weight (kg)',
-                hintText: 'e.g., 72.5',
-                border: OutlineInputBorder(),
-              ),
+            StreamBuilder(
+              stream: ref.read(appDatabaseProvider).watchLatestEntry(),
+              builder: (context, snapshot) {
+                String hint = 'e.g., 72.5';
+                if (snapshot.hasData && snapshot.data != null) {
+                  try {
+                    final w = (snapshot.data as dynamic).weightKg as double;
+                    hint = w.toStringAsFixed(1);
+                  } catch (_) {}
+                }
+                return TextField(
+                  controller: _weightCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: 'Weight (kg)',
+                    hintText: hint,
+                    border: const OutlineInputBorder(),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 12),
             Row(
