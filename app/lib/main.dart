@@ -31,7 +31,7 @@ class _AppRootState extends ConsumerState<AppRoot> {
       Future.microtask(() async {
         final svc = ref.read(reminderServiceProvider);
         await svc.initialize();
-        await svc.rescheduleSavedDailyReminder(id: 100);
+        await svc.rescheduleSavedReminders(baseId: 100);
       });
     }
   }
@@ -50,7 +50,7 @@ class _AppRootState extends ConsumerState<AppRoot> {
         home: Scaffold(body: Center(child: Text('Theme load error: $e'))),
       ),
       data: (settings) => MaterialApp.router(
-        title: 'Pesândinho',
+        title: 'Pesandínho',
         theme: buildLightTheme(settings.seedColor),
         darkTheme: buildDarkTheme(settings.seedColor),
         themeMode: settings.mode,

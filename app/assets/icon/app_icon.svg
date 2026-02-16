@@ -1,0 +1,33 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradient for the weight/barbell -->
+    <linearGradient id="weight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Left weight plate -->
+  <rect x="80" y="180" width="80" height="152" rx="12" fill="url(#weight)"/>
+  
+  <!-- Left connector -->
+  <rect x="160" y="240" width="40" height="32" rx="4" fill="url(#weight)"/>
+  
+  <!-- Center bar -->
+  <rect x="200" y="246" width="112" height="20" rx="10" fill="url(#weight)"/>
+  
+  <!-- Right connector -->
+  <rect x="312" y="240" width="40" height="32" rx="4" fill="url(#weight)"/>
+  
+  <!-- Right weight plate -->
+  <rect x="352" y="180" width="80" height="152" rx="12" fill="url(#weight)"/>
+  
+  <!-- Details/highlights on weights -->
+  <rect x="85" y="185" width="70" height="30" rx="8" fill="#ffffff" opacity="0.15"/>
+  <rect x="357" y="185" width="70" height="30" rx="8" fill="#ffffff" opacity="0.15"/>
+  
+  <!-- Center grip texture -->
+  <line x1="246" y1="251" x2="246" y2="261" stroke="#ffffff" stroke-width="2" opacity="0.3"/>
+  <line x1="256" y1="251" x2="256" y2="261" stroke="#ffffff" stroke-width="2" opacity="0.3"/>
+  <line x1="266" y1="251" x2="266" y2="261" stroke="#ffffff" stroke-width="2" opacity="0.3"/>
+</svg>

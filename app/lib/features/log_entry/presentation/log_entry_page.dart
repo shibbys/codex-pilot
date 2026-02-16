@@ -20,6 +20,19 @@ class _LogEntryPageState extends ConsumerState<LogEntryPage> {
   final TextEditingController _weightCtrl = TextEditingController();
   final TextEditingController _noteCtrl = TextEditingController();
   DateTime _date = DateTime.now();
+  final Set<String> _selectedTags = {};
+
+  // Tags pré-definidas
+  static const _quickTags = [
+    '💪 Treino',
+    '🍕 Cheat day',
+    '😴 Pouco sono',
+    '💧 Muita água',
+    '🏃 Cardio',
+    '🥗 Dieta',
+    '🍺 Bebida',
+    '😌 Bem-estar',
+  ];
 
   @override
   void dispose() {
@@ -28,11 +41,30 @@ class _LogEntryPageState extends ConsumerState<LogEntryPage> {
     super.dispose();
   }
 
+  void _toggleTag(String tag) {
+    setState(() {
+      if (_selectedTags.contains(tag)) {
+        _selectedTags.remove(tag);
+      } else {
+        _selectedTags.add(tag);
+      }
+    });
+  }
+
+  String _buildNote() {
+    final customNote = _noteCtrl.text.trim();
+    final tags = _selectedTags.join(' • ');
+    
+    if (tags.isEmpty) return customNote;
+    if (customNote.isEmpty) return tags;
+    return '$tags\n$customNote';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Log Weight')),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -43,7 +75,7 @@ class _LogEntryPageState extends ConsumerState<LogEntryPage> {
                 String hint = 'e.g., 72.5';
                 if (snapshot.hasData && snapshot.data != null) {
                   try {
-                    final w = (snapshot.data as dynamic).weightKg as double;
+                    final w = (snapshot.data as WeightEntry).weightKg;
                     hint = w.toStringAsFixed(1);
                   } catch (_) {}
                 }
@@ -64,7 +96,6 @@ class _LogEntryPageState extends ConsumerState<LogEntryPage> {
               },
             ),
             const SizedBox(height: 12),
-            // Nudge chips moved to History/Edit screen
             Row(
               children: <Widget>[
                 Expanded(
@@ -92,16 +123,42 @@ class _LogEntryPageState extends ConsumerState<LogEntryPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
+
+            // Quick Tags Section
+            Text(
+              'Quick Tags',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _quickTags.map((tag) {
+                final isSelected = _selectedTags.contains(tag);
+                return FilterChip(
+                  label: Text(tag),
+                  selected: isSelected,
+                  onSelected: (_) => _toggleTag(tag),
+                  selectedColor: Theme.of(context).colorScheme.primaryContainer,
+                  checkmarkColor: Theme.of(context).colorScheme.primary,
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 16),
+
             TextField(
               controller: _noteCtrl,
-              maxLines: 2,
+              maxLines: 3,
               decoration: const InputDecoration(
-                labelText: 'Note (optional)',
+                labelText: 'Additional Note (optional)',
+                hintText: 'Any other details...',
                 border: OutlineInputBorder(),
               ),
             ),
-            const Spacer(),
+            const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -118,11 +175,13 @@ class _LogEntryPageState extends ConsumerState<LogEntryPage> {
                     return;
                   }
 
+                  final finalNote = _buildNote();
+
                   final db = ref.read(appDatabaseProvider);
                   await db.addWeightEntry(
                     date: _date,
                     weightKg: weight,
-                    note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
+                    note: finalNote.isEmpty ? null : finalNote,
                   );
 
                   messenger.showSnackBar(
@@ -159,7 +218,3 @@ class DecimalTextInputFormatter extends TextInputFormatter {
     return TextEditingValue(text: result, selection: TextSelection.collapsed(offset: result.length));
   }
 }
-
-
-
-

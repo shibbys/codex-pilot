@@ -92,15 +92,15 @@ class AppDatabase extends _$AppDatabase {
     return deleted;
   }
 
-  Stream<dynamic> watchLatestEntry() {
-    final query = (select(weightEntries)
+  /// Retorna type-safe: WeightEntry? ao invés de dynamic
+  Stream<WeightEntry?> watchLatestEntry() {
+    return (select(weightEntries)
           ..orderBy([(t) => OrderingTerm.desc(t.entryDate)])
           ..limit(1))
         .watchSingleOrNull();
-    return query;
   }
 
-  Stream<List<dynamic>> watchAllEntries() {
+  Stream<List<WeightEntry>> watchAllEntries() {
     return (select(weightEntries)
           ..orderBy([(t) => OrderingTerm.desc(t.entryDate)]))
         .watch();
@@ -121,14 +121,15 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
-  Stream<dynamic> watchCurrentGoal() {
+  /// Retorna type-safe: Goal? ao invés de dynamic
+  Stream<Goal?> watchCurrentGoal() {
     return (select(goals)
           ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
           ..limit(1))
         .watchSingleOrNull();
   }
 
-  Stream<List<dynamic>> watchAllGoals() {
+  Stream<List<Goal>> watchAllGoals() {
     return (select(goals)..orderBy([(t) => OrderingTerm.desc(t.createdAt)])).watch();
   }
 }

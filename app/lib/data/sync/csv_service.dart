@@ -10,15 +10,22 @@ import 'package:flutter/foundation.dart';
 import 'package:drift/drift.dart';
 
 import '../local/app_database.dart';
+import '../../core/services/user_height_service.dart';
 
 class CsvService {
-  CsvService(this._db);
+  CsvService(this._db, this._heightService);
 
   final AppDatabase _db;
+  final UserHeightService _heightService;
 
   /// Export all weight entries to a CSV file with the name pattern:
   ///   `<User_First_name>.peso.<yyyy>.<MM>.<dd>.csv`
   /// Returns the created file.
+  /// 
+  /// CSV Format:
+  /// # height_cm,175
+  /// date,weightKg,note
+  /// 2024-01-01,75.5,Feeling good
   Future<File> exportEntries({String userFirstName = 'User'}) async {
     if (kIsWeb) {
       throw UnsupportedError('CSV export is not supported on web.');
@@ -26,9 +33,18 @@ class CsvService {
     final rows = await _db.select(_db.weightEntries).get();
     rows.sort((a, b) => a.entryDate.compareTo(b.entryDate));
 
-    final data = <List<dynamic>>[
-      <String>['date', 'weightKg', 'note'],
-    ];
+    final data = <List<dynamic>>[];
+    
+    // Add height metadata if available
+    final height = await _heightService.getHeight();
+    if (height != null) {
+      data.add(<dynamic>['# height_cm', height]);
+    }
+    
+    // Add header
+    data.add(<String>['date', 'weightKg', 'note']);
+    
+    // Add entries
     for (final r in rows) {
       final d = r.entryDate;
       final dateStr = '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
@@ -59,6 +75,11 @@ class CsvService {
 
   /// Import entries from a CSV file. Accepts a File directly.
   /// Returns number of rows imported/updated.
+  /// 
+  /// Supports CSV format with optional height metadata:
+  /// # height_cm,175
+  /// date,weightKg,note
+  /// 2024-01-01,75.5,Feeling good
   Future<int> importEntries(File file) async {
     if (kIsWeb) {
       throw UnsupportedError('CSV import is not supported on web.');
@@ -68,23 +89,54 @@ class CsvService {
     final rows = const CsvToListConverter(eol: '\n', shouldParseNumbers: false).convert(raw);
     int imported = 0;
     int startIndex = 0;
-    if (rows.isNotEmpty && rows.first.isNotEmpty && rows.first[0].toString().toLowerCase().contains('date')) {
-      startIndex = 1; // skip header
+
+    // Check for metadata and header
+    for (int i = 0; i < rows.length; i++) {
+      final r = rows[i];
+      if (r.isEmpty) continue;
+      
+      final firstCol = r[0]?.toString().trim() ?? '';
+      
+      // Check for height metadata
+      if (firstCol == '# height_cm' && r.length > 1) {
+        final heightStr = r[1]?.toString().trim();
+        final height = double.tryParse(heightStr?.replaceAll(',', '.') ?? '');
+        if (height != null && height > 0 && height < 300) {
+          await _heightService.setHeight(height);
+        }
+        continue;
+      }
+      
+      // Check for header row
+      if (firstCol.toLowerCase().contains('date')) {
+        startIndex = i + 1;
+        break;
+      }
+      
+      // If no header found and this looks like a date, start here
+      if (_parseDate(firstCol) != null) {
+        startIndex = i;
+        break;
+      }
     }
 
     await _db.transaction(() async {
       for (int i = startIndex; i < rows.length; i++) {
         final r = rows[i];
         if (r.isEmpty) continue;
+        
         final dateStr = r[0]?.toString().trim();
         final weightStr = (r.length > 1 ? r[1] : null)?.toString().trim();
         final noteStr = (r.length > 2 ? r[2] : null)?.toString();
+        
         if (dateStr == null || dateStr.isEmpty || weightStr == null || weightStr.isEmpty) continue;
+        
         final date = _parseDate(dateStr);
         final weight = double.tryParse(weightStr.replaceAll(',', '.'));
         if (date == null || weight == null) continue;
 
         final normalized = DateTime(date.year, date.month, date.day);
+        
         // Upsert by day
         final existing = await (_db.select(_db.weightEntries)..where((t) => t.entryDate.equals(normalized))).getSingleOrNull();
         if (existing == null) {
@@ -172,5 +224,6 @@ class CsvService {
 
 final csvServiceProvider = Provider<CsvService>((ref) {
   final db = ref.watch(appDatabaseProvider);
-  return CsvService(db);
+  final heightService = ref.watch(userHeightServiceProvider);
+  return CsvService(db, heightService);
 });

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/services/user_height_service.dart';
 
-import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../core/i18n/translations.dart';
-import '../../log_entry/services/reminder_service.dart';
 import '../../../data/local/app_database.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../../../data/sync/csv_service.dart';
 import 'package:share_plus/share_plus.dart';
+import 'widgets/reminder_section.dart';
+import 'widgets/theme_presets_section.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -22,14 +22,6 @@ class SettingsPage extends ConsumerStatefulWidget {
 }
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
-  TimeOfDay _time = const TimeOfDay(hour: 8, minute: 0);
-  bool _reminderSet = false;
-  Future<void> _refreshReminderStatus() async {
-    final svc = ref.read(reminderServiceProvider);
-    final scheduled = await svc.isReminderScheduled(100);
-    if (mounted) setState(() => _reminderSet = scheduled);
-  }
-
   Future<String?> _askFirstName(BuildContext context) async {
     final controller = TextEditingController();
     final result = await showDialog<String>(
@@ -53,21 +45,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       },
     );
     return result == null || result.isEmpty ? null : result;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    Future.microtask(() async {
-      final saved = await ref.read(reminderServiceProvider).loadSavedReminderTime();
-      if (saved != null && mounted) {
-        setState(() => _time = TimeOfDay(hour: saved.hour, minute: saved.minute));
-      }
-      if (mounted) {
-        setState(() => _reminderSet = saved != null);
-      }
-      await _refreshReminderStatus();
-    });
   }
 
   @override
@@ -99,71 +76,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 },
               ),
               const SizedBox(height: 16),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: kPresetAccentColors
-                    .map(
-                      (color) => GestureDetector(
-                        onTap: () => ref.read(themeControllerProvider.notifier).updateSeedColor(color),
-                        child: CircleAvatar(
-                          radius: themeSettings.seedColor == color ? 28 : 24,
-                          backgroundColor: color,
-                          child: themeSettings.seedColor == color
-                              ? const Icon(Icons.check, color: Colors.white)
-                              : null,
-                        ),
-                      ),
-                    )
-                    .toList()
-                  ..add(
-                    GestureDetector(
-                      onTap: () async {
-                        final current = ref.read(themeControllerProvider).valueOrNull?.seedColor ?? kPresetAccentColors.first;
-                        Color temp = current;
-                        final ok = await showDialog<bool>(
-                          context: context,
-                          builder: (ctx) {
-                            return AlertDialog(
-                              title: Text(tr(ref, 'customColor')),
-                              content: SingleChildScrollView(
-                                child: BlockPicker(
-                                  pickerColor: temp,
-                                  onColorChanged: (c) => temp = c,
-                                ),
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.of(ctx).pop(false),
-                                  child: Text(tr(ref, 'cancel')),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    ref.read(themeControllerProvider.notifier).updateSeedColor(kPresetAccentColors.first);
-                                    Navigator.of(ctx).pop(false);
-                                  },
-                                  child: Text(tr(ref, 'reset')),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () => Navigator.of(ctx).pop(true),
-                                  child: Text(tr(ref, 'done')),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                        if (ok == true) {
-                          await ref.read(themeControllerProvider.notifier).updateSeedColor(temp);
-                        }
-                      },
-                      child: CircleAvatar(
-                        radius: 24,
-                        backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-                        child: const Icon(Icons.color_lens, color: Colors.white),
-                      ),
-                    ),
-                  ),
-              ),
+              //Seleção dos temas pré-definidos
+              const ThemePresetsSection(),
               const SizedBox(height: 24),
               Text(tr(ref, 'language'), style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 8),
@@ -186,68 +100,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ],
               ),
               const SizedBox(height: 24),
-              Text(tr(ref, 'remindersTitle'), style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 24),
+              Text('Altura / Height', style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.schedule),
-                    title: Text(tr(ref, 'dailyReminderTime')),
-                    subtitle: Text(_time.format(context)),
-                    trailing: Icon(
-                      _reminderSet ? Icons.check_circle : Icons.cancel,
-                      color: _reminderSet ? Colors.green : Colors.grey,
-                    ),
-                    onTap: () async {
-                      final picked = await showTimePicker(
-                        context: context,
-                        initialTime: _time,
-                      );
-                      if (picked != null) {
-                        setState(() => _time = picked);
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: () async {
-                          final t = _time;
-                          await ref.read(reminderServiceProvider).scheduleDailyReminder(
-                                id: 100,
-                                hour: t.hour,
-                                minute: t.minute,
-                              );
-                          await _refreshReminderStatus();
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('${tr(ref, 'scheduledAt')} ${t.format(context)}')),
-                              );
-                          }
-                        },
-                        icon: const Icon(Icons.alarm_add),
-                        label: Text(tr(ref, 'schedule')),
-                      ),
-                      const SizedBox(width: 12),
-                      OutlinedButton.icon(
-                        onPressed: () async {
-                          await ref.read(reminderServiceProvider).cancelReminder(100);
-                          await _refreshReminderStatus();
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Reminder canceled')),
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.alarm_off),
-                        label: Text(tr(ref, 'cancel')),
-                      ),
-                    ],
-                  )
-                ],
-              ),
+              _HeightConfig(),
+              const SizedBox(height: 24),
+              const ReminderSection(),
               const Divider(),
               Text(tr(ref, 'dataManagement'), style: Theme.of(context).textTheme.titleLarge),
               ListTile(
@@ -355,6 +213,77 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           NavigationDestination(icon: const Icon(Icons.settings_outlined), selectedIcon: const Icon(Icons.settings), label: tr(ref, 'settings')),
         ],
       ),
+    );
+  }
+}
+
+class _HeightConfig extends ConsumerStatefulWidget {
+  const _HeightConfig();
+
+  @override
+  ConsumerState<_HeightConfig> createState() => _HeightConfigState();
+}
+
+class _HeightConfigState extends ConsumerState<_HeightConfig> {
+  final TextEditingController _heightCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHeight();
+  }
+
+  Future<void> _loadHeight() async {
+    final height = await ref.read(userHeightServiceProvider).getHeight();
+    if (height != null && mounted) {
+      _heightCtrl.text = height.toStringAsFixed(0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _heightCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            controller: _heightCtrl,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'Altura (cm)',
+              hintText: 'ex: 175',
+              border: OutlineInputBorder(),
+              suffixIcon: Icon(Icons.straighten),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        ElevatedButton.icon(
+          onPressed: () async {
+            final value = double.tryParse(_heightCtrl.text);
+            if (value != null && value > 0 && value < 300) {
+              await ref.read(userHeightServiceProvider).setHeight(value);
+              ref.invalidate(userHeightProvider);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Altura salva!')),
+                );
+              }
+            } else if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Altura inválida')),
+              );
+            }
+          },
+          icon: const Icon(Icons.save),
+          label: const Text('Salvar'),
+        ),
+      ],
     );
   }
 }

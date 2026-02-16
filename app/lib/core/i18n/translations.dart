@@ -4,8 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 final _translations = <String, Map<String, String>>{
   'en': {
-    'appTitle': 'Pesândinho',
-    'dashboardTitle': 'Pesândinho',
+    'appTitle': 'Pesandínho',
+    'dashboardTitle': 'Pesandínho',
     'historyTitle': 'History',
     'settingsTitle': 'Settings',
     'appearance': 'Appearance',
@@ -67,8 +67,8 @@ final _translations = <String, Map<String, String>>{
     'done': 'Done',
   },
   'pt': {
-    'appTitle': 'Pesândinho',
-    'dashboardTitle': 'Pesândinho',
+    'appTitle': 'Pesandínho',
+    'dashboardTitle': 'Pesandínho',
     'historyTitle': 'Histórico',
     'settingsTitle': 'Configurações',
     'appearance': 'Aparência',
